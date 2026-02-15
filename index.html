@@ -1,0 +1,3140 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>春节射击游戏 - 年兽大作战</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            overflow: hidden;
+            font-family: 'Microsoft YaHei', '微软雅黑', sans-serif;
+            cursor: crosshair;
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        html {
+            width: 100%;
+            height: 100%;
+        }
+
+        #gameContainer {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+            background: linear-gradient(180deg, #0a0a1a 0%, #1a1a2e 20%, #16213e 40%, #0f3460 70%, #1a3a5c 85%, #e94560 100%);
+            overflow: hidden;
+        }
+
+        #snowCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        #gameCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 2;
+        }
+
+        #ui {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 10;
+            background: linear-gradient(180deg, rgba(139, 0, 0, 0.8) 0%, transparent 100%);
+        }
+
+        .ui-box {
+            background: linear-gradient(135deg, #8b0000 0%, #dc143c 50%, #8b0000 100%);
+            border: 3px solid #ffd700;
+            border-radius: 10px;
+            padding: 8px 20px;
+            color: #ffd700;
+            font-size: 20px;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3), inset 0 2px 10px rgba(255, 215, 0, 0.2);
+        }
+
+        #score {
+            font-size: 24px;
+        }
+
+        #skillBox {
+            position: absolute;
+            top: 80px;
+            right: 20px;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .skill-btn {
+            background: linear-gradient(135deg, #4a0080 0%, #8000ff 50%, #4a0080 100%);
+            border: 3px solid #ffd700;
+            border-radius: 50%;
+            width: 70px;
+            height: 70px;
+            color: #ffd700;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 4px 15px rgba(128, 0, 255, 0.5);
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            opacity: 0.3;
+            pointer-events: none;
+        }
+
+        .skill-btn.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .skill-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 25px rgba(128, 0, 255, 0.8);
+        }
+
+        .skill-btn .cooldown {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .skill-btn.gatling {
+            background: linear-gradient(135deg, #2a4a00 0%, #4a8a00 50%, #2a4a00 100%);
+            box-shadow: 0 4px 15px rgba(74, 138, 0, 0.5);
+        }
+
+        #combo {
+            position: absolute;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 28px;
+            color: #ffd700;
+            text-shadow: 0 0 10px #ff4500, 0 0 20px #ff4500;
+            opacity: 0;
+            transition: opacity 0.3s;
+            z-index: 10;
+        }
+
+        #startScreen, #endScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(180deg, rgba(26, 26, 46, 0.95) 0%, rgba(15, 52, 96, 0.95) 50%, rgba(233, 69, 96, 0.9) 100%);
+            z-index: 100;
+        }
+
+        #endScreen {
+            display: none;
+        }
+
+        .title {
+            font-size: 48px;
+            color: #ffd700;
+            text-shadow: 0 0 20px #ff4500, 0 0 40px #ff4500, 3px 3px 6px rgba(0, 0, 0, 0.5);
+            margin-bottom: 20px;
+            text-align: center;
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes glow {
+            from { text-shadow: 0 0 20px #ff4500, 0 0 40px #ff4500; }
+            to { text-shadow: 0 0 30px #ffd700, 0 0 60px #ffd700; }
+        }
+
+        .subtitle {
+            font-size: 24px;
+            color: #fff;
+            margin-bottom: 40px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #8b0000 0%, #dc143c 50%, #8b0000 100%);
+            border: 4px solid #ffd700;
+            border-radius: 15px;
+            padding: 15px 50px;
+            font-size: 28px;
+            color: #ffd700;
+            cursor: pointer;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4), inset 0 2px 10px rgba(255, 215, 0, 0.3);
+            transition: all 0.3s ease;
+            font-weight: bold;
+        }
+
+        .btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 8px 30px rgba(255, 69, 0, 0.6), inset 0 2px 15px rgba(255, 215, 0, 0.4);
+        }
+
+        .instructions {
+            margin-top: 30px;
+            color: #fff;
+            text-align: center;
+            font-size: 14px;
+            line-height: 1.8;
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
+            max-width: 500px;
+        }
+
+        .instructions span {
+            color: #ffd700;
+            font-weight: bold;
+        }
+
+        #finalScore {
+            font-size: 72px;
+            color: #ffd700;
+            text-shadow: 0 0 30px #ff4500;
+            margin: 20px 0;
+        }
+
+        .score-detail {
+            color: #fff;
+            font-size: 18px;
+            margin-bottom: 30px;
+            text-align: center;
+            line-height: 1.6;
+        }
+
+        .moon {
+            position: absolute;
+            top: 5%;
+            right: 8%;
+            width: 100px;
+            height: 100px;
+            z-index: 3;
+            background: transparent;
+        }
+
+        .moon-star {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            cursor: pointer;
+            z-index: 4;
+            animation: starTwinkle 0.5s ease-in-out infinite alternate;
+        }
+
+        .moon-star svg {
+            width: 100%;
+            height: 100%;
+            filter: drop-shadow(0 0 10px #ffd700);
+        }
+
+        @keyframes starTwinkle {
+            from { transform: scale(1) rotate(0deg); opacity: 1; }
+            to { transform: scale(1.3) rotate(45deg); opacity: 0.8; }
+        }
+
+        .lantern {
+            position: absolute;
+            width: 60px;
+            height: 80px;
+            background: radial-gradient(ellipse at center, #ff6b35 0%, #ff4500 30%, #dc143c 60%, #8b0000 100%);
+            border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+            box-shadow: 0 0 30px rgba(255, 69, 0, 0.6), 0 0 60px rgba(255, 200, 0, 0.3);
+            z-index: 0;
+        }
+
+        .lantern::before {
+            content: '';
+            position: absolute;
+            top: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 30px;
+            height: 15px;
+            background: #ffd700;
+            border-radius: 5px 5px 0 0;
+        }
+
+        .lantern::after {
+            content: '';
+            position: absolute;
+            bottom: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 4px;
+            height: 25px;
+            background: linear-gradient(180deg, #ffd700, #ff4500);
+        }
+
+        .lantern-candle {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 20px;
+            height: 25px;
+            background: radial-gradient(ellipse at center bottom, #fff7e0 0%, #ffd700 30%, #ff8c00 60%, #ff4500 100%);
+            border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+            animation: candleFlicker 0.3s ease-in-out infinite alternate;
+            box-shadow: 0 0 15px rgba(255, 200, 0, 0.8), 0 0 30px rgba(255, 150, 0, 0.5);
+        }
+
+        @keyframes candleFlicker {
+            0% { transform: translate(-50%, -50%) scale(1) rotate(-2deg); opacity: 0.9; }
+            100% { transform: translate(-50%, -50%) scale(1.1) rotate(2deg); opacity: 1; }
+        }
+
+        #lantern1 { top: 12%; left: 5%; animation: swing 3s ease-in-out infinite; }
+        #lantern2 { top: 18%; right: 5%; animation: swing 3.5s ease-in-out infinite reverse; }
+        #lantern3 { top: 5%; left: 18%; animation: swing 2.8s ease-in-out infinite; }
+        #lantern4 { top: 10%; right: 22%; animation: swing 3.2s ease-in-out infinite reverse; }
+
+        @keyframes swing {
+            0%, 100% { transform: rotate(-5deg); }
+            50% { transform: rotate(5deg); }
+        }
+
+        .ground {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 15%;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(220, 235, 255, 1) 100%);
+            z-index: 0;
+        }
+
+        .ground::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 30px;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.9));
+            border-radius: 50% 50% 0 0;
+        }
+
+        .tree {
+            position: absolute;
+            bottom: 15%;
+            z-index: 5;
+            pointer-events: auto;
+            cursor: pointer;
+        }
+
+        .tree-trunk {
+            width: 25px;
+            height: 70px;
+            background: linear-gradient(90deg, #3d2817, #5a3d2b, #3d2817);
+            margin: 0 auto;
+            border-radius: 0 0 5px 5px;
+            pointer-events: none;
+        }
+
+        .tree-top {
+            width: 0;
+            height: 0;
+            border-left: 50px solid transparent;
+            border-right: 50px solid transparent;
+            border-bottom: 90px solid #1a472a;
+            position: relative;
+            filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.3));
+            pointer-events: none;
+        }
+
+        .tree-top::after {
+            content: '';
+            position: absolute;
+            top: 25px;
+            left: -38px;
+            width: 0;
+            height: 0;
+            border-left: 38px solid transparent;
+            border-right: 38px solid transparent;
+            border-bottom: 70px solid #1a5c2e;
+        }
+
+        .tree-top::before {
+            content: '';
+            position: absolute;
+            top: 55px;
+            left: -28px;
+            width: 0;
+            height: 0;
+            border-left: 28px solid transparent;
+            border-right: 28px solid transparent;
+            border-bottom: 50px solid #1e6b35;
+        }
+
+        #tree1 { left: 3%; }
+        #tree2 { right: 5%; }
+        #tree3 { left: 12%; transform: scale(0.6); }
+        #tree4 { right: 15%; transform: scale(0.7); }
+
+        .house {
+            position: absolute;
+            bottom: 15%;
+            z-index: 5;
+        }
+
+        .house-body {
+            width: 120px;
+            height: 90px;
+            background: linear-gradient(135deg, #a52a2a 0%, #cd5c5c 30%, #a52a2a 70%, #8b0000 100%);
+            border: 4px solid #8b4513;
+            position: relative;
+            border-radius: 5px;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.3);
+        }
+
+        .house-body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: repeating-linear-gradient(
+                90deg,
+                transparent,
+                transparent 20px,
+                rgba(139, 69, 19, 0.3) 20px,
+                rgba(139, 69, 19, 0.3) 22px
+            );
+        }
+
+        .house-roof {
+            width: 0;
+            height: 0;
+            border-left: 75px solid transparent;
+            border-right: 75px solid transparent;
+            border-bottom: 60px solid #4a2810;
+            position: relative;
+            left: -15px;
+        }
+
+        .house-roof::before {
+            content: '';
+            position: absolute;
+            top: 60px;
+            left: -75px;
+            width: 150px;
+            height: 8px;
+            background: linear-gradient(90deg, #8b4513, #a0522d, #8b4513);
+        }
+
+        .house-roof::after {
+            content: '';
+            position: absolute;
+            top: 60px;
+            left: -75px;
+            width: 150px;
+            height: 3px;
+            background: #ffd700;
+        }
+
+        .chimney {
+            position: absolute;
+            width: 25px;
+            height: 45px;
+            background: linear-gradient(90deg, #8b4513, #a0522d, #8b4513);
+            top: -40px;
+            right: 20px;
+            border-radius: 3px 3px 0 0;
+            border: 2px solid #5a3d2b;
+        }
+
+        .chimney::after {
+            content: '';
+            position: absolute;
+            top: -5px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 15px;
+            height: 10px;
+            background: rgba(100, 100, 100, 0.5);
+            border-radius: 50%;
+            animation: smoke 2s ease-in-out infinite;
+        }
+
+        @keyframes smoke {
+            0%, 100% { opacity: 0.3; transform: translateX(-50%) translateY(0); }
+            50% { opacity: 0.6; transform: translateX(-50%) translateY(-5px); }
+        }
+
+        .house-door {
+            width: 35px;
+            height: 55px;
+            background: linear-gradient(135deg, #5a3d2b 0%, #8b5a2b 50%, #5a3d2b 100%);
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 3px solid #3d2817;
+            border-radius: 5px 5px 0 0;
+            cursor: pointer;
+            z-index: 2;
+        }
+
+        .house-door::before {
+            content: '';
+            position: absolute;
+            top: 5px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 12px;
+            height: 12px;
+            background: radial-gradient(circle, #ffd700 0%, #daa520 100%);
+            border-radius: 50%;
+            box-shadow: 0 0 8px rgba(255, 215, 0, 0.8);
+        }
+
+        .door-knob {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: radial-gradient(circle, #ffd700 0%, #b8860b 100%);
+            border-radius: 50%;
+            right: 5px;
+            top: 50%;
+            box-shadow: 0 0 5px rgba(255, 215, 0, 0.5);
+        }
+
+        .house-window {
+            width: 30px;
+            height: 35px;
+            background: linear-gradient(180deg, #87ceeb 0%, #4169e1 50%, #1e3a5f 100%);
+            position: absolute;
+            top: 15px;
+            border: 3px solid #8b4513;
+            border-radius: 5px 5px 0 0;
+            cursor: pointer;
+            overflow: hidden;
+            z-index: 2;
+        }
+
+        .house-window::before {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 3px;
+            background: #8b4513;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .house-window::after {
+            content: '';
+            position: absolute;
+            width: 3px;
+            height: 100%;
+            background: #8b4513;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .window-light {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, rgba(255, 215, 0, 0.8) 0%, transparent 70%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            z-index: 1;
+        }
+
+        .house-window:hover .window-light {
+            opacity: 1;
+        }
+
+        .fu-character {
+            position: absolute;
+            width: 35px;
+            height: 35px;
+            background: #dc143c;
+            border: 3px solid #ffd700;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ffd700;
+            font-size: 20px;
+            font-weight: bold;
+            top: -45px;
+            left: 50%;
+            transform: translateX(-50%) rotate(180deg);
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+        }
+
+        .door-bell {
+            position: absolute;
+            width: 30px;
+            height: 35px;
+            top: -45px;
+            left: 50%;
+            transform: translateX(-50%);
+            cursor: pointer;
+            z-index: 3;
+        }
+
+        .door-bell svg {
+            width: 100%;
+            height: 100%;
+            filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.6));
+        }
+
+        #house1 { left: 20%; }
+        #house1 .house-window { left: 12px; }
+        #house1 .house-window:nth-of-type(2) { left: 78px; }
+        #house1 .chimney { display: none; }
+
+        #house2 { right: 20%; }
+        #house2 .house-window { left: 12px; }
+        #house2 .house-window:nth-of-type(2) { left: 78px; }
+
+        .couplet {
+            position: absolute;
+            width: 30px;
+            height: 100px;
+            background: linear-gradient(180deg, #dc143c 0%, #b22222 100%);
+            border: 3px solid #ffd700;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            writing-mode: vertical-rl;
+            color: #ffd700;
+            font-size: 16px;
+            font-weight: bold;
+            z-index: 1;
+            box-shadow: 3px 3px 8px rgba(0, 0, 0, 0.4);
+        }
+
+        #couplet1 {
+            left: calc(20% + 125px);
+            bottom: calc(15% + 20px);
+        }
+
+        #couplet2 {
+            left: calc(20% - 40px);
+            bottom: calc(15% + 20px);
+        }
+
+        #couplet1::before { content: '迎春接福'; }
+        #couplet2::before { content: '辞旧迎新'; }
+
+        .cat {
+            position: absolute;
+            z-index: 5;
+            pointer-events: none;
+        }
+
+        .cat-body {
+            position: relative;
+            animation: catBounce 0.5s ease-in-out;
+        }
+
+        @keyframes catBounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .cat-meow {
+            position: absolute;
+            bottom: -35px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: white;
+            padding: 5px 10px;
+            border-radius: 10px;
+            font-size: 14px;
+            white-space: nowrap;
+            animation: meowFloat 3s ease-out forwards;
+        }
+
+        @keyframes meowFloat {
+            0% { opacity: 1; transform: translateX(-50%) translateY(0); }
+            70% { opacity: 1; transform: translateX(-50%) translateY(0); }
+            100% { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(10deg); }
+        }
+
+        .sailor-moon {
+            position: absolute;
+            z-index: 20;
+            pointer-events: none;
+        }
+
+        .firework-container {
+            position: absolute;
+            z-index: 15;
+            pointer-events: none;
+        }
+
+        .dragon {
+            position: absolute;
+            z-index: 12;
+            pointer-events: none;
+        }
+
+        .lion-dance {
+            position: absolute;
+            bottom: 15%;
+            z-index: 11;
+            pointer-events: none;
+        }
+
+        .meteor {
+            position: absolute;
+            z-index: 12;
+            pointer-events: none;
+            cursor: pointer;
+        }
+
+        .gatling-cursor {
+            position: absolute;
+            z-index: 20;
+            pointer-events: none;
+        }
+
+        .hit-effect {
+            position: absolute;
+            pointer-events: none;
+            z-index: 6;
+            animation: hitPop 0.5s ease-out forwards;
+        }
+
+        @keyframes hitPop {
+            0% { transform: scale(0.5); opacity: 1; }
+            100% { transform: scale(2); opacity: 0; }
+        }
+
+        .score-popup {
+            position: absolute;
+            font-size: 24px;
+            font-weight: bold;
+            color: #ffd700;
+            text-shadow: 0 0 10px #ff4500;
+            pointer-events: none;
+            z-index: 7;
+            animation: scoreFloat 1s ease-out forwards;
+        }
+
+        @keyframes scoreFloat {
+            0% { transform: translateY(0); opacity: 1; }
+            100% { transform: translateY(-50px); opacity: 0; }
+        }
+
+        .miss-effect {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            border: 3px solid #ff6b6b;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 6;
+            animation: missRipple 0.4s ease-out forwards;
+        }
+
+        @keyframes missRipple {
+            0% { transform: scale(0.5); opacity: 1; }
+            100% { transform: scale(2); opacity: 0; }
+        }
+
+        .notification {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.85);
+            color: #ffd700;
+            padding: 25px 50px;
+            border-radius: 20px;
+            font-size: 28px;
+            font-weight: bold;
+            z-index: 200;
+            animation: notifyPop 2.5s ease-out forwards;
+            border: 4px solid #ffd700;
+            text-align: center;
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.5);
+        }
+
+        @keyframes notifyPop {
+            0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
+            15% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
+            85% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
+        }
+
+        .unlock-msg {
+            font-size: 18px;
+            color: #fff;
+            margin-top: 12px;
+        }
+
+        .gatling-effect {
+            position: absolute;
+            pointer-events: none;
+            z-index: 8;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="snowCanvas"></canvas>
+        <canvas id="gameCanvas"></canvas>
+        
+        <svg class="moon" id="moon" viewBox="0 0 100 100">
+            <defs>
+                <filter id="moonGlow">
+                    <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+                    <feMerge>
+                        <feMergeNode in="coloredBlur"/>
+                        <feMergeNode in="SourceGraphic"/>
+                    </feMerge>
+                </filter>
+            </defs>
+            <circle cx="50" cy="50" r="40" fill="#FFFACD" filter="url(#moonGlow)" style="filter: drop-shadow(0 0 25px rgba(255, 250, 205, 0.9));"/>
+        </svg>
+        
+        <div class="lantern" id="lantern1"><div class="lantern-candle"></div></div>
+        <div class="lantern" id="lantern2"><div class="lantern-candle"></div></div>
+        <div class="lantern" id="lantern3"><div class="lantern-candle"></div></div>
+        <div class="lantern" id="lantern4"><div class="lantern-candle"></div></div>
+        
+        <div class="ground"></div>
+        
+        <div class="tree" id="tree1">
+            <div class="tree-top"></div>
+            <div class="tree-trunk"></div>
+        </div>
+        <div class="tree" id="tree2">
+            <div class="tree-top"></div>
+            <div class="tree-trunk"></div>
+        </div>
+        <div class="tree" id="tree3">
+            <div class="tree-top"></div>
+            <div class="tree-trunk"></div>
+        </div>
+        <div class="tree" id="tree4">
+            <div class="tree-top"></div>
+            <div class="tree-trunk"></div>
+        </div>
+        
+        <div class="house" id="house1">
+            <div class="house-roof"></div>
+            <div class="house-body">
+                <div class="door-bell" id="bell1">
+                    <svg viewBox="0 0 30 40">
+                        <defs>
+                            <linearGradient id="bellGold" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" style="stop-color:#FFD700"/>
+                                <stop offset="50%" style="stop-color:#FFA500"/>
+                                <stop offset="100%" style="stop-color:#B8860B"/>
+                            </linearGradient>
+                        </defs>
+                        <ellipse cx="15" cy="5" rx="4" ry="3" fill="url(#bellGold)"/>
+                        <path d="M8 8 Q8 22 15 28 Q22 22 22 8 Q15 12 8 8" fill="url(#bellGold)" stroke="#B8860B" stroke-width="0.5"/>
+                        <ellipse cx="15" cy="28" rx="7" ry="4" fill="url(#bellGold)" stroke="#B8860B" stroke-width="0.5"/>
+                        <circle cx="15" cy="33" r="3" fill="#B8860B"/>
+                        <ellipse cx="15" cy="35" rx="2" ry="1.5" fill="#8B4513"/>
+                        <line x1="15" y1="0" x2="15" y2="5" stroke="#8B4513" stroke-width="1.5"/>
+                        <circle cx="15" cy="0" r="2" fill="#8B4513"/>
+                        <path d="M10 15 Q12 18 10 21" stroke="#FFFACD" stroke-width="1" fill="none" opacity="0.5"/>
+                    </svg>
+                </div>
+                <div class="house-window" id="window1"><div class="window-light"></div></div>
+                <div class="house-window" id="window2"><div class="window-light"></div></div>
+                <div class="house-door" id="door1">
+                    <div class="door-knob"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="house" id="house2">
+            <div class="house-roof">
+                <div class="chimney" id="chimney"></div>
+            </div>
+            <div class="house-body">
+                <div class="fu-character" style="width: 28px; height: 28px; font-size: 16px;">福</div>
+                <div class="house-window" id="window3"><div class="window-light"></div></div>
+                <div class="house-window" id="window4"><div class="window-light"></div></div>
+                <div class="house-door" id="door2">
+                    <div class="door-knob"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="couplet" id="couplet1"></div>
+        <div class="couplet" id="couplet2"></div>
+        
+        <div id="ui">
+            <div class="ui-box" id="score">得分: 0</div>
+            <div class="ui-box" id="timer">时间: 90</div>
+        </div>
+        
+        <div id="skillBox">
+            <div class="skill-btn" id="fireworkSkill">
+                <span>🎆</span>
+                <span style="font-size:10px">烟花[F]</span>
+                <div class="cooldown" style="display:none"></div>
+            </div>
+            <div class="skill-btn gatling" id="gatlingSkill">
+                <span>🔫</span>
+                <span style="font-size:10px">加特林[G]</span>
+                <div class="cooldown" style="display:none"></div>
+            </div>
+        </div>
+        
+        <div id="combo"></div>
+        
+        <div id="startScreen">
+            <div class="title">🧧 春节射击游戏 🧧</div>
+            <div class="subtitle">年兽大作战</div>
+            <button class="btn" id="startBtn">开始游戏</button>
+            <div class="instructions">
+                <p><span>🎯 游戏规则:</span></p>
+                <p>点击射击年兽(25分)、红包(15分)、鞭炮(10分)得分</p>
+                <p>⚠️ 小心福字会 <span>-20分</span> | 连击获得加分!</p>
+                <p><span>🎮 技能系统:</span></p>
+                <p>50分解锁烟花[F键] | 100分舞狮表演</p>
+                <p>200分流星许愿→加特林机枪[G键]</p>
+                <p><span>🌟 彩蛋:</span></p>
+                <p>🌙 月牙星星→美少女战士 | 🏠 门铃→小猫</p>
+                <p>🧨 连续3次鞭炮→飞龙 | 🪟 点击窗户+5分</p>
+            </div>
+        </div>
+        
+        <div id="endScreen">
+            <div class="title">🎊 游戏结束 🎊</div>
+            <div id="finalScore">0</div>
+            <div class="score-detail" id="scoreDetail"></div>
+            <button class="btn" id="restartBtn">再来一局</button>
+        </div>
+    </div>
+
+    <script>
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioCtx = null;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new AudioContext();
+            }
+        }
+
+        function playSound(type) {
+            if (!audioCtx) return;
+            
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            
+            switch(type) {
+                case 'hit':
+                    oscillator.frequency.setValueAtTime(800, audioCtx.currentTime);
+                    oscillator.frequency.exponentialRampToValueAtTime(400, audioCtx.currentTime + 0.1);
+                    gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+                    oscillator.start(audioCtx.currentTime);
+                    oscillator.stop(audioCtx.currentTime + 0.1);
+                    break;
+                case 'miss':
+                    oscillator.frequency.setValueAtTime(200, audioCtx.currentTime);
+                    gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
+                    oscillator.start(audioCtx.currentTime);
+                    oscillator.stop(audioCtx.currentTime + 0.05);
+                    break;
+                case 'firework':
+                    for (let i = 0; i < 8; i++) {
+                        setTimeout(() => {
+                            const osc = audioCtx.createOscillator();
+                            const gain = audioCtx.createGain();
+                            osc.connect(gain);
+                            gain.connect(audioCtx.destination);
+                            osc.frequency.setValueAtTime(400 + i * 80, audioCtx.currentTime);
+                            osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.4);
+                            gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
+                            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
+                            osc.start(audioCtx.currentTime);
+                            osc.stop(audioCtx.currentTime + 0.4);
+                        }, i * 80);
+                    }
+                    break;
+                case 'cat':
+                    oscillator.type = 'sine';
+                    oscillator.frequency.setValueAtTime(700, audioCtx.currentTime);
+                    oscillator.frequency.setValueAtTime(600, audioCtx.currentTime + 0.1);
+                    oscillator.frequency.setValueAtTime(500, audioCtx.currentTime + 0.2);
+                    gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+                    oscillator.start(audioCtx.currentTime);
+                    oscillator.stop(audioCtx.currentTime + 0.3);
+                    break;
+                case 'dragon':
+                    oscillator.type = 'sawtooth';
+                    oscillator.frequency.setValueAtTime(100, audioCtx.currentTime);
+                    oscillator.frequency.exponentialRampToValueAtTime(400, audioCtx.currentTime + 0.5);
+                    gainNode.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+                    oscillator.start(audioCtx.currentTime);
+                    oscillator.stop(audioCtx.currentTime + 0.5);
+                    break;
+                case 'sailor':
+                    const notes = [523, 659, 784, 1047];
+                    notes.forEach((freq, i) => {
+                        setTimeout(() => {
+                            const osc = audioCtx.createOscillator();
+                            const gain = audioCtx.createGain();
+                            osc.connect(gain);
+                            gain.connect(audioCtx.destination);
+                            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                            gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+                            osc.start(audioCtx.currentTime);
+                            osc.stop(audioCtx.currentTime + 0.2);
+                        }, i * 150);
+                    });
+                    break;
+                case 'lion':
+                    for (let i = 0; i < 10; i++) {
+                        setTimeout(() => {
+                            const osc = audioCtx.createOscillator();
+                            const gain = audioCtx.createGain();
+                            osc.connect(gain);
+                            gain.connect(audioCtx.destination);
+                            osc.type = 'square';
+                            osc.frequency.setValueAtTime(300 + (i % 2) * 100, audioCtx.currentTime);
+                            gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+                            osc.start(audioCtx.currentTime);
+                            osc.stop(audioCtx.currentTime + 0.1);
+                        }, i * 100);
+                    }
+                    break;
+                case 'bell':
+                    oscillator.type = 'sine';
+                    oscillator.frequency.setValueAtTime(1200, audioCtx.currentTime);
+                    gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+                    oscillator.start(audioCtx.currentTime);
+                    oscillator.stop(audioCtx.currentTime + 0.5);
+                    break;
+                case 'meteor':
+                    oscillator.type = 'sine';
+                    oscillator.frequency.setValueAtTime(800, audioCtx.currentTime);
+                    oscillator.frequency.exponentialRampToValueAtTime(200, audioCtx.currentTime + 0.5);
+                    gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+                    oscillator.start(audioCtx.currentTime);
+                    oscillator.stop(audioCtx.currentTime + 0.5);
+                    break;
+                case 'gatling':
+                    for (let i = 0; i < 5; i++) {
+                        setTimeout(() => {
+                            const osc = audioCtx.createOscillator();
+                            const gain = audioCtx.createGain();
+                            osc.connect(gain);
+                            gain.connect(audioCtx.destination);
+                            osc.type = 'sawtooth';
+                            osc.frequency.setValueAtTime(200 + Math.random() * 100, audioCtx.currentTime);
+                            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
+                            osc.start(audioCtx.currentTime);
+                            osc.stop(audioCtx.currentTime + 0.05);
+                        }, i * 30);
+                    }
+                    break;
+            }
+        }
+
+        const snowCanvas = document.getElementById('snowCanvas');
+        const snowCtx = snowCanvas.getContext('2d');
+        const gameCanvas = document.getElementById('gameCanvas');
+        const gameCtx = gameCanvas.getContext('2d');
+        
+        let width, height;
+        let snowflakes = [];
+        let targets = [];
+        let score = 0;
+        let timeLeft = 120;
+        let gameRunning = false;
+        let combo = 0;
+        let lastHitTime = 0;
+        let totalHits = 0;
+        let totalShots = 0;
+        let gameTimer;
+        
+        let fireworkUnlocked = false;
+        let fireworkCooldown = false;
+        let lionDanceUnlocked = false;
+        let lionDanceShown = false;
+        let gatlingUnlocked = false;
+        let gatlingActive = false;
+        let gatlingCooldown = false;
+        let meteorShown = false;
+        
+        let moonStarActive = false;
+        let moonStarTimer = null;
+        let moonStarElement = null;
+        let moonClicks = 0;
+        let moonClickTimeout = null;
+        let inOtherWorld = false;
+        
+        let windowCatTimer = null;
+        
+        let doorBell1Clicks = 0;
+        let doorBell2Clicks = 0;
+        let doorBell1Timeout = null;
+        let doorBell2Timeout = null;
+        let cat1Shown = false;
+        let cat2Shown = false;
+        let catEverShown = false;
+        
+        let bianpaoClicks = 0;
+        let bianpaoTimeout = null;
+        let dragonActive = false;
+        
+        let lionClicks = 0;
+        let lionElement = null;
+        let lionRunning = false;
+        
+        let moonPhaseChanged = false;
+        
+        let tree1Clicks = 0;
+        let tree2Clicks = 0;
+        let tree1Timeout = null;
+        let tree2Timeout = null;
+        let isChristmasTree = false;
+        
+        const targetTypes = {
+            nianshou: {
+                name: '年兽',
+                points: 25,
+                color: '#ff4500',
+                size: 50,
+                speed: 2
+            },
+            hongbao: {
+                name: '红包',
+                points: 15,
+                color: '#dc143c',
+                size: 35,
+                speed: 3
+            },
+            bianpao: {
+                name: '鞭炮',
+                points: 10,
+                color: '#ffd700',
+                size: 30,
+                speed: 4
+            },
+            fuzi: {
+                name: '福字',
+                points: -20,
+                color: '#ff6b6b',
+                size: 40,
+                speed: 2.5
+            }
+        };
+
+        function resize() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            snowCanvas.width = width;
+            snowCanvas.height = height;
+            gameCanvas.width = width;
+            gameCanvas.height = height;
+        }
+
+        function initSnow() {
+            snowflakes = [];
+            for (let i = 0; i < 150; i++) {
+                snowflakes.push({
+                    x: Math.random() * width,
+                    y: Math.random() * height,
+                    radius: Math.random() * 3 + 1,
+                    speed: Math.random() * 2 + 0.5,
+                    wind: Math.random() * 0.5 - 0.25
+                });
+            }
+        }
+
+        function drawSnow() {
+            snowCtx.clearRect(0, 0, width, height);
+            snowCtx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+            snowCtx.shadowColor = 'rgba(255, 255, 255, 0.5)';
+            snowCtx.shadowBlur = 5;
+            
+            snowflakes.forEach(flake => {
+                snowCtx.beginPath();
+                snowCtx.arc(flake.x, flake.y, flake.radius, 0, Math.PI * 2);
+                snowCtx.fill();
+                
+                flake.y += flake.speed;
+                flake.x += flake.wind + Math.sin(flake.y * 0.01) * 0.5;
+                
+                if (flake.y > height) {
+                    flake.y = -10;
+                    flake.x = Math.random() * width;
+                }
+                if (flake.x > width) flake.x = 0;
+                if (flake.x < 0) flake.x = width;
+            });
+        }
+
+        function createTarget() {
+            const types = Object.keys(targetTypes);
+            const weights = [0.3, 0.35, 0.25, 0.1];
+            let random = Math.random();
+            let typeIndex = 0;
+            
+            for (let i = 0; i < weights.length; i++) {
+                random -= weights[i];
+                if (random <= 0) {
+                    typeIndex = i;
+                    break;
+                }
+            }
+            
+            const type = types[typeIndex];
+            const targetType = targetTypes[type];
+            const direction = Math.random() > 0.5 ? 1 : -1;
+            const startY = Math.random() * (height * 0.5) + height * 0.15;
+            
+            return {
+                type: type,
+                x: direction === 1 ? -targetType.size : width + targetType.size,
+                y: startY,
+                direction: direction,
+                speed: targetType.speed * (0.8 + Math.random() * 0.4),
+                size: targetType.size,
+                wobble: Math.random() * Math.PI * 2,
+                wobbleSpeed: 0.05 + Math.random() * 0.05
+            };
+        }
+
+        function drawTarget(target) {
+            const type = targetTypes[target.type];
+            const ctx = gameCtx;
+            
+            ctx.save();
+            ctx.translate(target.x, target.y);
+            
+            if (target.direction === -1) {
+                ctx.scale(-1, 1);
+            }
+            
+            const wobbleY = Math.sin(target.wobble) * 5;
+            ctx.translate(0, wobbleY);
+            
+            switch (target.type) {
+                case 'nianshou':
+                    drawNianshou(ctx, target.size);
+                    break;
+                case 'hongbao':
+                    drawHongbao(ctx, target.size);
+                    break;
+                case 'bianpao':
+                    drawBianpao(ctx, target.size);
+                    break;
+                case 'fuzi':
+                    drawFuzi(ctx, target.size);
+                    break;
+            }
+            
+            ctx.restore();
+        }
+
+        function drawNianshou(ctx, size) {
+            ctx.fillStyle = '#ff4500';
+            ctx.beginPath();
+            ctx.ellipse(0, 0, size * 0.6, size * 0.5, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.fillStyle = '#8b0000';
+            ctx.beginPath();
+            ctx.ellipse(-size * 0.25, -size * 0.15, size * 0.15, size * 0.2, -0.3, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.ellipse(size * 0.25, -size * 0.15, size * 0.15, size * 0.2, 0.3, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.fillStyle = '#ffd700';
+            ctx.beginPath();
+            ctx.arc(-size * 0.2, -size * 0.1, size * 0.08, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(size * 0.2, -size * 0.1, size * 0.08, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.fillStyle = '#000';
+            ctx.beginPath();
+            ctx.arc(-size * 0.2, -size * 0.1, size * 0.04, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(size * 0.2, -size * 0.1, size * 0.04, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.fillStyle = '#ff6b6b';
+            ctx.beginPath();
+            ctx.ellipse(0, size * 0.1, size * 0.15, size * 0.08, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.fillStyle = '#ffd700';
+            for (let i = 0; i < 5; i++) {
+                const angle = (i / 5) * Math.PI - Math.PI / 2;
+                const hornX = Math.cos(angle) * size * 0.5;
+                const hornY = Math.sin(angle) * size * 0.4 - size * 0.3;
+                ctx.beginPath();
+                ctx.moveTo(hornX, hornY);
+                ctx.lineTo(hornX + Math.cos(angle) * size * 0.2, hornY + Math.sin(angle) * size * 0.2 - size * 0.15);
+                ctx.lineTo(hornX + size * 0.05, hornY);
+                ctx.fill();
+            }
+        }
+
+        function drawHongbao(ctx, size) {
+            ctx.fillStyle = '#dc143c';
+            ctx.shadowColor = 'rgba(255, 215, 0, 0.5)';
+            ctx.shadowBlur = 10;
+            
+            ctx.beginPath();
+            ctx.roundRect(-size * 0.4, -size * 0.5, size * 0.8, size, size * 0.1);
+            ctx.fill();
+            
+            ctx.shadowBlur = 0;
+            ctx.fillStyle = '#ffd700';
+            ctx.beginPath();
+            ctx.arc(0, -size * 0.1, size * 0.25, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.fillStyle = '#dc143c';
+            ctx.beginPath();
+            ctx.arc(0, -size * 0.1, size * 0.18, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.fillStyle = '#ffd700';
+            ctx.font = `bold ${size * 0.25}px Microsoft YaHei`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('福', 0, -size * 0.1);
+        }
+
+        function drawBianpao(ctx, size) {
+            ctx.fillStyle = '#dc143c';
+            
+            for (let i = 0; i < 6; i++) {
+                const y = -size * 0.4 + i * size * 0.18;
+                ctx.fillStyle = i % 2 === 0 ? '#dc143c' : '#ffd700';
+                ctx.beginPath();
+                ctx.roundRect(-size * 0.2, y, size * 0.4, size * 0.15, 3);
+                ctx.fill();
+            }
+            
+            ctx.strokeStyle = '#8b4513';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(0, -size * 0.5);
+            ctx.lineTo(0, -size * 0.7);
+            ctx.stroke();
+            
+            ctx.fillStyle = '#ff4500';
+            ctx.beginPath();
+            ctx.arc(0, -size * 0.75, size * 0.08, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        function drawFuzi(ctx, size) {
+            ctx.fillStyle = '#dc143c';
+            ctx.shadowColor = 'rgba(255, 215, 0, 0.5)';
+            ctx.shadowBlur = 10;
+            
+            ctx.beginPath();
+            ctx.moveTo(0, -size * 0.5);
+            ctx.lineTo(size * 0.5, 0);
+            ctx.lineTo(0, size * 0.5);
+            ctx.lineTo(-size * 0.5, 0);
+            ctx.closePath();
+            ctx.fill();
+            
+            ctx.shadowBlur = 0;
+            ctx.fillStyle = '#ffd700';
+            ctx.font = `bold ${size * 0.5}px Microsoft YaHei`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.save();
+            ctx.rotate(Math.PI);
+            ctx.fillText('福', 0, 0);
+            ctx.restore();
+        }
+
+        function updateTargets() {
+            if (Math.random() < 0.03 && targets.length < 8) {
+                targets.push(createTarget());
+            }
+            
+            targets = targets.filter(target => {
+                target.x += target.speed * target.direction;
+                target.wobble += target.wobbleSpeed;
+                
+                return target.x > -100 && target.x < width + 100;
+            });
+        }
+
+        function drawTargets() {
+            gameCtx.clearRect(0, 0, width, height);
+            targets.forEach(drawTarget);
+        }
+
+        function checkHit(x, y) {
+            totalShots++;
+            
+            for (let i = targets.length - 1; i >= 0; i--) {
+                const target = targets[i];
+                const type = targetTypes[target.type];
+                const dx = x - target.x;
+                const dy = y - target.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (distance < type.size) {
+                    const now = Date.now();
+                    if (now - lastHitTime < 1000) {
+                        combo++;
+                    } else {
+                        combo = 1;
+                    }
+                    lastHitTime = now;
+                    
+                    const comboBonus = combo > 1 ? Math.floor(combo * 2) : 0;
+                    const points = type.points + comboBonus;
+                    score = Math.max(0, score + points);
+                    totalHits++;
+                    
+                    if (target.type === 'bianpao') {
+                        bianpaoClicks++;
+                        clearTimeout(bianpaoTimeout);
+                        bianpaoTimeout = setTimeout(() => { bianpaoClicks = 0; }, 2000);
+                        
+                        if (bianpaoClicks >= 3 && !dragonActive) {
+                            activateDragon();
+                            bianpaoClicks = 0;
+                        }
+                    } else {
+                        bianpaoClicks = 0;
+                    }
+                    
+                    showScorePopup(target.x, target.y, points, type.points < 0);
+                    createHitEffect(target.x, target.y, type.color);
+                    playSound('hit');
+                    
+                    targets.splice(i, 1);
+                    
+                    updateUI();
+                    checkUnlocks();
+                    return true;
+                }
+            }
+            
+            createMissEffect(x, y);
+            playSound('miss');
+            combo = 0;
+            return false;
+        }
+
+        function checkUnlocks() {
+            if (score >= 50 && !fireworkUnlocked) {
+                fireworkUnlocked = true;
+                document.getElementById('fireworkSkill').classList.add('active');
+                showNotification('🎆 烟花技能已解锁!', '按 F 键释放烟花，清除所有目标！');
+            }
+            
+            if (score >= 100 && !lionDanceUnlocked) {
+                lionDanceUnlocked = true;
+            }
+            
+            if (lionDanceUnlocked && !lionDanceShown && gameRunning) {
+                lionDanceShown = true;
+                showLionDance();
+            }
+            
+            if (score >= 200 && !meteorShown && gameRunning) {
+                meteorShown = true;
+                showMeteor();
+            }
+        }
+
+        function showNotification(title, subtitle = '') {
+            const notif = document.createElement('div');
+            notif.className = 'notification';
+            notif.innerHTML = `<div>${title}</div>${subtitle ? `<div class="unlock-msg">${subtitle}</div>` : ''}`;
+            document.getElementById('gameContainer').appendChild(notif);
+            setTimeout(() => notif.remove(), 2500);
+        }
+
+        function showScorePopup(x, y, points, isNegative) {
+            const popup = document.createElement('div');
+            popup.className = 'score-popup';
+            popup.textContent = (points > 0 ? '+' : '') + points;
+            popup.style.left = x + 'px';
+            popup.style.top = y + 'px';
+            popup.style.color = isNegative ? '#ff6b6b' : '#ffd700';
+            document.getElementById('gameContainer').appendChild(popup);
+            
+            setTimeout(() => popup.remove(), 1000);
+        }
+
+        function createHitEffect(x, y, color) {
+            const effect = document.createElement('div');
+            effect.className = 'hit-effect';
+            effect.style.left = (x - 25) + 'px';
+            effect.style.top = (y - 25) + 'px';
+            effect.style.width = '50px';
+            effect.style.height = '50px';
+            effect.style.borderRadius = '50%';
+            effect.style.background = `radial-gradient(circle, ${color} 0%, transparent 70%)`;
+            document.getElementById('gameContainer').appendChild(effect);
+            
+            setTimeout(() => effect.remove(), 500);
+            
+            for (let i = 0; i < 8; i++) {
+                const particle = document.createElement('div');
+                particle.style.position = 'absolute';
+                particle.style.left = x + 'px';
+                particle.style.top = y + 'px';
+                particle.style.width = '8px';
+                particle.style.height = '8px';
+                particle.style.borderRadius = '50%';
+                particle.style.background = color;
+                particle.style.pointerEvents = 'none';
+                particle.style.zIndex = '7';
+                
+                const angle = (i / 8) * Math.PI * 2;
+                const distance = 50 + Math.random() * 30;
+                const endX = x + Math.cos(angle) * distance;
+                const endY = y + Math.sin(angle) * distance;
+                
+                particle.animate([
+                    { transform: 'translate(-50%, -50%) scale(1)', opacity: 1 },
+                    { transform: `translate(${endX - x - 4}px, ${endY - y - 4}px) scale(0)`, opacity: 0 }
+                ], {
+                    duration: 500,
+                    easing: 'ease-out'
+                });
+                
+                document.getElementById('gameContainer').appendChild(particle);
+                setTimeout(() => particle.remove(), 500);
+            }
+        }
+
+        function createMissEffect(x, y) {
+            const effect = document.createElement('div');
+            effect.className = 'miss-effect';
+            effect.style.left = (x - 15) + 'px';
+            effect.style.top = (y - 15) + 'px';
+            document.getElementById('gameContainer').appendChild(effect);
+            
+            setTimeout(() => effect.remove(), 400);
+        }
+
+        function updateUI() {
+            document.getElementById('score').textContent = '得分: ' + score;
+            
+            const comboEl = document.getElementById('combo');
+            if (combo > 1) {
+                comboEl.textContent = combo + ' 连击!';
+                comboEl.style.opacity = '1';
+            } else {
+                comboEl.style.opacity = '0';
+            }
+        }
+
+        function activateFirework() {
+            if (!fireworkUnlocked || fireworkCooldown || !gameRunning) return;
+            
+            fireworkCooldown = true;
+            const skillBtn = document.getElementById('fireworkSkill');
+            const cooldownEl = skillBtn.querySelector('.cooldown');
+            cooldownEl.style.display = 'flex';
+            
+            playSound('firework');
+            
+            const container = document.getElementById('gameContainer');
+            const firework = document.createElement('div');
+            firework.className = 'firework-container';
+            firework.style.left = (width / 2) + 'px';
+            firework.style.bottom = '0';
+            container.appendChild(firework);
+            
+            let fireworkY = 0;
+            const targetY = height * 0.55;
+            const riseInterval = setInterval(() => {
+                fireworkY += 6;
+                firework.style.bottom = fireworkY + 'px';
+                
+                firework.innerHTML = `
+                    <div style="width: 12px; height: 20px; background: linear-gradient(to top, #ff4500, #ffd700); border-radius: 50%; box-shadow: 0 0 15px #ff4500;"></div>
+                    <div style="position: absolute; width: 4px; height: 30px; background: linear-gradient(to bottom, transparent, #ff6b6b); top: 20px; left: 4px;"></div>
+                `;
+                
+                if (fireworkY >= targetY) {
+                    clearInterval(riseInterval);
+                    explodeFirework(firework);
+                }
+            }, 35);
+            
+            let cooldownTime = 10;
+            cooldownEl.textContent = cooldownTime;
+            const cooldownInterval = setInterval(() => {
+                cooldownTime--;
+                cooldownEl.textContent = cooldownTime;
+                if (cooldownTime <= 0) {
+                    clearInterval(cooldownInterval);
+                    fireworkCooldown = false;
+                    cooldownEl.style.display = 'none';
+                }
+            }, 1000);
+        }
+
+        function explodeFirework(firework) {
+            firework.innerHTML = '';
+            
+            const container = document.getElementById('gameContainer');
+            
+            const colors = ['#ff4500', '#ffd700', '#ff69b4', '#00ff00', '#00bfff', '#ff00ff', '#ffff00', '#ff6347', '#00ffff'];
+            
+            for (let i = 0; i < 100; i++) {
+                const particle = document.createElement('div');
+                particle.style.position = 'absolute';
+                particle.style.width = '10px';
+                particle.style.height = '10px';
+                particle.style.borderRadius = '50%';
+                particle.style.background = colors[Math.floor(Math.random() * colors.length)];
+                particle.style.boxShadow = `0 0 15px ${colors[Math.floor(Math.random() * colors.length)]}, 0 0 30px ${colors[Math.floor(Math.random() * colors.length)]}`;
+                particle.style.left = firework.style.left;
+                particle.style.top = (height - parseFloat(firework.style.bottom)) + 'px';
+                particle.style.zIndex = '16';
+                container.appendChild(particle);
+                
+                const angle = (i / 100) * Math.PI * 2;
+                const distance = 200 + Math.random() * 200;
+                const duration = 1200 + Math.random() * 600;
+                
+                particle.animate([
+                    { transform: 'translate(-50%, -50%) scale(1.5)', opacity: 1 },
+                    { transform: `translate(${Math.cos(angle) * distance}px, ${Math.sin(angle) * distance + 100}px) scale(0)`, opacity: 0 }
+                ], {
+                    duration: duration,
+                    easing: 'ease-out'
+                });
+                
+                setTimeout(() => particle.remove(), duration);
+            }
+            
+            const flash = document.createElement('div');
+            flash.style.position = 'absolute';
+            flash.style.left = '0';
+            flash.style.top = '0';
+            flash.style.width = '100%';
+            flash.style.height = '100%';
+            flash.style.background = 'radial-gradient(circle, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.5) 30%, transparent 60%)';
+            flash.style.zIndex = '15';
+            flash.style.pointerEvents = 'none';
+            container.appendChild(flash);
+            
+            setTimeout(() => {
+                flash.style.opacity = '0';
+                flash.style.transition = 'opacity 0.5s';
+                setTimeout(() => flash.remove(), 500);
+            }, 150);
+            
+            let totalPoints = 0;
+            targets.forEach(target => {
+                totalPoints += Math.abs(targetTypes[target.type].points);
+            });
+            
+            if (targets.length > 0) {
+                score += totalPoints;
+                showNotification('🎆 烟花爆炸!', `+${totalPoints} 分！清除 ${targets.length} 个目标`);
+                updateUI();
+                checkUnlocks();
+            }
+            
+            targets = [];
+            
+            if (catEverShown) {
+                showCatsWatchFirework();
+            }
+            
+            setTimeout(() => firework.remove(), 1500);
+        }
+
+        function showCatsWatchFirework() {
+            const container = document.getElementById('gameContainer');
+            
+            const cats = [];
+            if (cat1Shown) {
+                cats.push({ name: '铃铛', color: '#E8D4A8', x: width * 0.25 });
+            }
+            if (cat2Shown) {
+                cats.push({ name: '果酱', color: '#3D3D3D', x: width * 0.45 });
+                cats.push({ name: '酱', color: '#B8B8B8', x: width * 0.65 });
+            }
+            
+            if (cats.length === 0) return;
+            
+            cats.forEach((catData, index) => {
+                setTimeout(() => {
+                    const cat = document.createElement('div');
+                    cat.className = 'cat';
+                    cat.style.left = catData.x + 'px';
+                    cat.style.bottom = '15%';
+                    cat.innerHTML = `
+                        <div class="cat-body">
+                            <svg width="50" height="45" viewBox="0 0 50 45">
+                                <ellipse cx="25" cy="32" rx="18" ry="12" fill="${catData.color}"/>
+                                <circle cx="25" cy="18" r="12" fill="${catData.color}"/>
+                                <polygon points="16,10 13,-1 21,8" fill="${catData.color}"/>
+                                <polygon points="34,10 37,-1 29,8" fill="${catData.color}"/>
+                                <ellipse cx="20" cy="16" rx="3" ry="4" fill="#2E8B57"/>
+                                <ellipse cx="30" cy="16" rx="3" ry="4" fill="#2E8B57"/>
+                                <ellipse cx="20" cy="16" rx="1" ry="2" fill="black"/>
+                                <ellipse cx="30" cy="16" rx="1" ry="2" fill="black"/>
+                                <ellipse cx="25" cy="22" rx="2" ry="1.5" fill="#FF69B4"/>
+                            </svg>
+                            <div class="cat-meow">${catData.name}看烟花✨</div>
+                        </div>
+                    `;
+                    container.appendChild(cat);
+                    
+                    cat.animate([
+                        { transform: 'translateY(30px)', opacity: 0 },
+                        { transform: 'translateY(0)', opacity: 1 }
+                    ], {
+                        duration: 400,
+                        easing: 'ease-out'
+                    });
+                    
+                    setTimeout(() => {
+                        cat.animate([
+                            { transform: 'translateY(0)', opacity: 1 },
+                            { transform: 'translateY(30px)', opacity: 0 }
+                        ], {
+                            duration: 300,
+                            easing: 'ease-in'
+                        }).onfinish = () => cat.remove();
+                    }, 2500);
+                }, index * 200);
+            });
+        }
+
+        function startWindowCatTimer() {
+            if (windowCatTimer) clearInterval(windowCatTimer);
+            
+            const scheduleNext = () => {
+                const delay = 15000 + Math.random() * 5000;
+                windowCatTimer = setTimeout(() => {
+                    if (gameRunning && (cat1Shown || cat2Shown)) {
+                        showCatsInWindows();
+                    }
+                    scheduleNext();
+                }, delay);
+            };
+            scheduleNext();
+        }
+
+        function showCatsInWindows() {
+            const container = document.getElementById('gameContainer');
+            let delay = 0;
+            
+            if (cat1Shown) {
+                const windows = ['window1', 'window2'];
+                const randomWindow = windows[Math.floor(Math.random() * windows.length)];
+                const windowEl = document.getElementById(randomWindow);
+                const rect = windowEl.getBoundingClientRect();
+                
+                setTimeout(() => {
+                    showCatHeadInWindow(rect.left, rect.top, '铃铛', '#E8D4A8');
+                }, delay);
+                delay += 800;
+            }
+            
+            if (cat2Shown) {
+                const window3 = document.getElementById('window3');
+                const window4 = document.getElementById('window4');
+                const rect3 = window3.getBoundingClientRect();
+                const rect4 = window4.getBoundingClientRect();
+                
+                setTimeout(() => {
+                    showCatHeadInWindow(rect3.left, rect3.top, '果酱', '#3D3D3D');
+                }, delay);
+                delay += 600;
+                
+                setTimeout(() => {
+                    showCatHeadInWindow(rect4.left, rect4.top, '酱', '#B8B8B8');
+                }, delay);
+            }
+        }
+
+        function showCatHeadInWindow(x, y, name, color) {
+            const container = document.getElementById('gameContainer');
+            
+            const catHead = document.createElement('div');
+            catHead.style.position = 'absolute';
+            catHead.style.left = x + 'px';
+            catHead.style.top = y + 'px';
+            catHead.style.zIndex = '6';
+            catHead.style.pointerEvents = 'none';
+            catHead.innerHTML = `
+                <svg width="30" height="25" viewBox="0 0 30 25">
+                    <circle cx="15" cy="15" r="12" fill="${color}"/>
+                    <polygon points="6,8 3,-2 12,6" fill="${color}"/>
+                    <polygon points="24,8 27,-2 18,6" fill="${color}"/>
+                    <ellipse cx="10" cy="12" rx="3" ry="4" fill="#2E8B57"/>
+                    <ellipse cx="20" cy="12" rx="3" ry="4" fill="#2E8B57"/>
+                    <ellipse cx="10" cy="12" rx="1" ry="2" fill="black"/>
+                    <ellipse cx="20" cy="12" rx="1" ry="2" fill="black"/>
+                    <ellipse cx="15" cy="18" rx="2" ry="1" fill="#FF69B4"/>
+                </svg>
+            `;
+            container.appendChild(catHead);
+            
+            catHead.animate([
+                { transform: 'translateY(20px)', opacity: 0 },
+                { transform: 'translateY(0)', opacity: 1 }
+            ], {
+                duration: 300,
+                easing: 'ease-out'
+            });
+            
+            setTimeout(() => {
+                catHead.animate([
+                    { transform: 'translateY(0)', opacity: 1 },
+                    { transform: 'translateY(20px)', opacity: 0 }
+                ], {
+                    duration: 300,
+                    easing: 'ease-in'
+                }).onfinish = () => catHead.remove();
+            }, 2000);
+        }
+
+        function startMoonStarTimer() {
+            if (moonStarTimer) clearInterval(moonStarTimer);
+            
+            moonStarTimer = setInterval(() => {
+                if (!gameRunning) return;
+                
+                if (moonStarElement) {
+                    moonStarElement.remove();
+                    moonStarElement = null;
+                }
+                
+                const moon = document.getElementById('moon');
+                const moonRect = moon.getBoundingClientRect();
+                
+                moonStarElement = document.createElement('div');
+                moonStarElement.className = 'moon-star';
+                moonStarElement.style.left = (moonRect.left - 60) + 'px';
+                moonStarElement.style.top = (moonRect.top + 35) + 'px';
+                moonStarElement.style.zIndex = '4';
+                moonStarElement.innerHTML = `
+                    <svg viewBox="0 0 30 30">
+                        <polygon points="15,0 18,11 30,11 20,18 24,30 15,22 6,30 10,18 0,11 12,11" fill="#FFD700"/>
+                    </svg>
+                `;
+                document.getElementById('gameContainer').appendChild(moonStarElement);
+                
+                moonStarActive = true;
+                
+                moonStarElement.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    activateSailorMoon();
+                });
+                
+                setTimeout(() => {
+                    if (moonStarElement) {
+                        moonStarElement.remove();
+                        moonStarElement = null;
+                        moonStarActive = false;
+                    }
+                }, 2000);
+            }, 10000);
+        }
+
+        function activateSailorMoon() {
+            if (!moonStarElement) return;
+            
+            playSound('sailor');
+            
+            const container = document.getElementById('gameContainer');
+            const moon = document.getElementById('moon');
+            const moonRect = moon.getBoundingClientRect();
+            
+            const sailor = document.createElement('div');
+            sailor.className = 'sailor-moon';
+            sailor.style.left = moonRect.left + 'px';
+            sailor.style.top = moonRect.top + 'px';
+            sailor.innerHTML = `
+                <svg width="150" height="180" viewBox="0 0 150 180">
+                    <defs>
+                        <radialGradient id="hairGrad3" cx="50%" cy="30%" r="60%">
+                            <stop offset="0%" style="stop-color:#FFD700"/>
+                            <stop offset="50%" style="stop-color:#FFC125"/>
+                            <stop offset="100%" style="stop-color:#EE9A00"/>
+                        </radialGradient>
+                        <linearGradient id="dressGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" style="stop-color:#4169E1"/>
+                            <stop offset="100%" style="stop-color:#1E3A8A"/>
+                        </linearGradient>
+                        <filter id="sailorGlow">
+                            <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+                            <feMerge>
+                                <feMergeNode in="coloredBlur"/>
+                                <feMergeNode in="SourceGraphic"/>
+                            </feMerge>
+                        </filter>
+                    </defs>
+                    <ellipse cx="75" cy="45" rx="45" ry="40" fill="url(#hairGrad3)" filter="url(#sailorGlow)"/>
+                    <ellipse cx="75" cy="30" rx="18" ry="12" fill="#FFD700"/>
+                    <circle cx="75" cy="60" r="28" fill="#FFE4C4"/>
+                    <ellipse cx="60" cy="55" rx="6" ry="8" fill="white"/>
+                    <ellipse cx="90" cy="55" rx="6" ry="8" fill="white"/>
+                    <circle cx="60" cy="55" r="4" fill="#4169E1"/>
+                    <circle cx="90" cy="55" r="4" fill="#4169E1"/>
+                    <circle cx="61" cy="54" r="1.5" fill="black"/>
+                    <circle cx="91" cy="54" r="1.5" fill="black"/>
+                    <ellipse cx="75" cy="70" rx="4" ry="3" fill="#FFB6C1"/>
+                    <path d="M68 78 Q75 84 82 78" stroke="#E57373" stroke-width="2" fill="none"/>
+                    <path d="M45 35 Q30 20 40 40 Q25 30 42 48" stroke="#FFD700" stroke-width="3" fill="none"/>
+                    <path d="M105 35 Q120 20 110 40 Q125 30 108 48" stroke="#FFD700" stroke-width="3" fill="none"/>
+                    <circle cx="75" cy="25" r="8" fill="#FFD700" stroke="#FFA500" stroke-width="2"/>
+                    <path d="M75 17 L75 10 M75 33 L75 40 M67 25 L60 25 M83 25 L90 25" stroke="#FFA500" stroke-width="2"/>
+                    <ellipse cx="75" cy="110" rx="35" ry="50" fill="url(#dressGrad)"/>
+                    <rect x="50" y="85" width="50" height="20" fill="white" rx="3"/>
+                    <path d="M40 90 L25 120 L45 105 Z" fill="url(#dressGrad)"/>
+                    <path d="M110 90 L125 120 L105 105 Z" fill="url(#dressGrad)"/>
+                    <circle cx="75" cy="95" r="6" fill="#FFD700" filter="url(#sailorGlow)"/>
+                    <ellipse cx="75" cy="145" rx="8" ry="4" fill="#FF69B4"/>
+                    <ellipse cx="60" cy="145" rx="6" ry="3" fill="#FF69B4"/>
+                    <ellipse cx="90" cy="145" rx="6" ry="3" fill="#FF69B4"/>
+                    <text x="75" y="175" text-anchor="middle" fill="#FFD700" font-size="14" font-weight="bold" filter="url(#sailorGlow)">代表月亮消灭你!</text>
+                </svg>
+            `;
+            container.appendChild(sailor);
+            
+            sailor.animate([
+                { transform: 'scale(0) rotate(-180deg)', opacity: 0 },
+                { transform: 'scale(1.2) rotate(0deg)', opacity: 1 }
+            ], {
+                duration: 600,
+                easing: 'ease-out'
+            });
+            
+            setTimeout(() => {
+                const flash = document.createElement('div');
+                flash.style.position = 'absolute';
+                flash.style.left = '0';
+                flash.style.top = '0';
+                flash.style.width = '100%';
+                flash.style.height = '100%';
+                flash.style.background = 'radial-gradient(circle, rgba(255, 215, 0, 0.95) 0%, rgba(255, 255, 255, 0.7) 30%, transparent 70%)';
+                flash.style.zIndex = '19';
+                flash.style.pointerEvents = 'none';
+                container.appendChild(flash);
+                
+                setTimeout(() => {
+                    flash.style.opacity = '0';
+                    flash.style.transition = 'opacity 0.5s';
+                    setTimeout(() => flash.remove(), 500);
+                }, 200);
+                
+                let totalPoints = 0;
+                targets.forEach(target => {
+                    totalPoints += Math.abs(targetTypes[target.type].points) * 2;
+                });
+                
+                if (targets.length > 0) {
+                    score += totalPoints;
+                    showNotification('🌙 美少女战士!', `代表月亮消灭 ${targets.length} 个目标！+${totalPoints}分`);
+                    updateUI();
+                    checkUnlocks();
+                }
+                
+                targets = [];
+                
+                setTimeout(() => {
+                    sailor.animate([
+                        { transform: 'scale(1.2) rotate(0deg)', opacity: 1 },
+                        { transform: 'scale(0) rotate(180deg)', opacity: 0 }
+                    ], {
+                        duration: 500,
+                        easing: 'ease-in'
+                    }).onfinish = () => sailor.remove();
+                }, 1200);
+            }, 800);
+            
+            if (moonStarElement) {
+                moonStarElement.remove();
+                moonStarElement = null;
+                moonStarActive = false;
+            }
+        }
+
+        function setupHouseInteractions() {
+            const windows = document.querySelectorAll('.house-window');
+            windows.forEach((win) => {
+                win.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    if (!gameRunning) return;
+                    
+                    playSound('bell');
+                    
+                    const originalBg = win.style.background;
+                    win.style.background = 'radial-gradient(circle, #ffd700 0%, #ff8c00 100%)';
+                    win.style.boxShadow = '0 0 20px rgba(255, 215, 0, 0.8)';
+                    
+                    setTimeout(() => {
+                        win.style.background = '';
+                        win.style.boxShadow = '';
+                    }, 400);
+                    
+                    const rect = win.getBoundingClientRect();
+                    const popup = document.createElement('div');
+                    popup.className = 'score-popup';
+                    popup.textContent = '+5';
+                    popup.style.left = rect.left + 'px';
+                    popup.style.top = rect.top + 'px';
+                    document.getElementById('gameContainer').appendChild(popup);
+                    setTimeout(() => popup.remove(), 1000);
+                    
+                    score += 5;
+                    updateUI();
+                    checkUnlocks();
+                });
+            });
+            
+            const bell1 = document.getElementById('bell1');
+            const door2 = document.getElementById('door2');
+            
+            bell1.addEventListener('click', function(e) {
+                e.stopPropagation();
+                if (!gameRunning) return;
+                
+                playSound('bell');
+                doorBell1Clicks++;
+                clearTimeout(doorBell1Timeout);
+                doorBell1Timeout = setTimeout(() => { doorBell1Clicks = 0; }, 2000);
+                
+                bell1.style.transform = 'translateX(-50%) scale(1.2)';
+                setTimeout(() => {
+                    bell1.style.transform = 'translateX(-50%)';
+                }, 150);
+                
+                if (doorBell1Clicks >= 3) {
+                    cat1Shown = true;
+                    showCat1();
+                    doorBell1Clicks = 0;
+                }
+            });
+            
+            door2.addEventListener('click', function(e) {
+                e.stopPropagation();
+                if (!gameRunning) return;
+                
+                playSound('bell');
+                doorBell2Clicks++;
+                clearTimeout(doorBell2Timeout);
+                doorBell2Timeout = setTimeout(() => { doorBell2Clicks = 0; }, 2000);
+                
+                door2.style.transform = 'translateX(-50%) scale(1.1)';
+                setTimeout(() => {
+                    door2.style.transform = 'translateX(-50%)';
+                }, 150);
+                
+                if (doorBell2Clicks >= 3) {
+                    cat2Shown = true;
+                    showCat2();
+                    doorBell2Clicks = 0;
+                }
+            });
+        }
+
+        function showCat1() {
+            playSound('cat');
+            
+            const house1 = document.getElementById('house1');
+            const houseRect = house1.getBoundingClientRect();
+            const container = document.getElementById('gameContainer');
+            
+            const cat = document.createElement('div');
+            cat.className = 'cat';
+            cat.style.left = (houseRect.left + houseRect.width / 2 - 35) + 'px';
+            cat.style.bottom = (height - houseRect.bottom + 90) + 'px';
+            cat.innerHTML = `
+                <div class="cat-body">
+                    <svg width="70" height="60" viewBox="0 0 70 60">
+                        <ellipse cx="35" cy="42" rx="25" ry="18" fill="#E8D4A8"/>
+                        <ellipse cx="35" cy="42" rx="22" ry="15" fill="#F5E6C8"/>
+                        <circle cx="35" cy="22" r="16" fill="#E8D4A8"/>
+                        <polygon points="22,12 19,-2 28,10" fill="#E8D4A8"/>
+                        <polygon points="48,12 51,-2 42,10" fill="#E8D4A8"/>
+                        <ellipse cx="28" cy="20" rx="5" ry="6" fill="#2E8B57"/>
+                        <ellipse cx="42" cy="20" rx="5" ry="6" fill="#2E8B57"/>
+                        <ellipse cx="28" cy="20" rx="2" ry="3" fill="black"/>
+                        <ellipse cx="42" cy="20" rx="2" ry="3" fill="black"/>
+                        <ellipse cx="35" cy="28" rx="3" ry="2" fill="#FF69B4"/>
+                        <path d="M32 32 Q35 36 38 32" stroke="#333" stroke-width="1.5" fill="none"/>
+                        <line x1="15" y1="25" x2="5" y2="22" stroke="#E8D4A8" stroke-width="2"/>
+                        <line x1="15" y1="30" x2="5" y2="32" stroke="#E8D4A8" stroke-width="2"/>
+                        <line x1="55" y1="25" x2="65" y2="22" stroke="#E8D4A8" stroke-width="2"/>
+                        <line x1="55" y1="30" x2="65" y2="32" stroke="#E8D4A8" stroke-width="2"/>
+                    </svg>
+                    <div class="cat-meow">喵~ 铃铛 🐱</div>
+                </div>
+            `;
+            container.appendChild(cat);
+            
+            setTimeout(() => {
+                cat.style.opacity = '0';
+                cat.style.transition = 'opacity 0.5s';
+                setTimeout(() => cat.remove(), 500);
+            }, 6000);
+            
+            score += 20;
+            showNotification('🐱 铃铛小猫!', '+20分');
+            catEverShown = true;
+            updateUI();
+            checkUnlocks();
+        }
+
+        function showCat2() {
+            playSound('cat');
+            
+            const chimney = document.getElementById('chimney');
+            const chimneyRect = chimney.getBoundingClientRect();
+            const container = document.getElementById('gameContainer');
+            
+            const cats = [
+                { bodyColor: '#3D3D3D', patternColor: '#1A1A1A', eyeColor: '#2E8B57', name: '果酱', offsetX: -30 },
+                { bodyColor: '#B8B8B8', patternColor: '#4A6FA5', eyeColor: '#4169E1', name: '酱', offsetX: 30 }
+            ];
+            
+            cats.forEach((catData, index) => {
+                setTimeout(() => {
+                    const cat = document.createElement('div');
+                    cat.className = 'cat';
+                    cat.style.left = (chimneyRect.left + catData.offsetX) + 'px';
+                    cat.style.top = (chimneyRect.top - 60) + 'px';
+                    cat.innerHTML = `
+                        <div class="cat-body">
+                            <svg width="55" height="50" viewBox="0 0 55 50">
+                                <ellipse cx="27" cy="35" rx="20" ry="14" fill="${catData.bodyColor}"/>
+                                <circle cx="27" cy="20" r="13" fill="${catData.bodyColor}"/>
+                                <polygon points="17,10 14,-2 23,8" fill="${catData.bodyColor}"/>
+                                <polygon points="37,10 40,-2 31,8" fill="${catData.bodyColor}"/>
+                                <ellipse cx="21" cy="18" rx="4" ry="5" fill="${catData.patternColor}"/>
+                                <ellipse cx="33" cy="18" rx="4" ry="5" fill="${catData.patternColor}"/>
+                                <ellipse cx="21" cy="18" rx="1.5" ry="2.5" fill="black"/>
+                                <ellipse cx="33" cy="18" rx="1.5" ry="2.5" fill="black"/>
+                                <ellipse cx="27" cy="24" rx="2.5" ry="1.5" fill="#FF69B4"/>
+                            </svg>
+                            <div class="cat-meow">${catData.name} 喵~</div>
+                        </div>
+                    `;
+                    container.appendChild(cat);
+                    
+                    cat.animate([
+                        { transform: 'translateY(40px)', opacity: 0 },
+                        { transform: 'translateY(0)', opacity: 1 }
+                    ], {
+                        duration: 600,
+                        easing: 'ease-out'
+                    });
+                    
+                    setTimeout(() => {
+                        cat.animate([
+                            { transform: 'translateY(0)', opacity: 1 },
+                            { transform: 'translateY(40px)', opacity: 0 }
+                        ], {
+                            duration: 500,
+                            easing: 'ease-in'
+                        }).onfinish = () => cat.remove();
+                    }, 5000);
+                }, index * 400);
+            });
+            
+            score += 30;
+            showNotification('🐱 两只小猫!', '果酱 & 酱 +30分');
+            catEverShown = true;
+            updateUI();
+            checkUnlocks();
+        }
+
+        function activateDragon() {
+            dragonActive = true;
+            playSound('dragon');
+            
+            const container = document.getElementById('gameContainer');
+            const dragon = document.createElement('div');
+            dragon.className = 'dragon';
+            dragon.style.left = '-250px';
+            dragon.style.top = (height * 0.3) + 'px';
+            dragon.innerHTML = `
+                <svg width="250" height="100" viewBox="0 0 250 100">
+                    <defs>
+                        <linearGradient id="dragonBody2" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" style="stop-color:#FFD700"/>
+                            <stop offset="50%" style="stop-color:#FF4500"/>
+                            <stop offset="100%" style="stop-color:#DC143C"/>
+                        </linearGradient>
+                        <linearGradient id="dragonScale2" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" style="stop-color:#FFD700"/>
+                            <stop offset="100%" style="stop-color:#FFA500"/>
+                        </linearGradient>
+                        <filter id="dragonGlow">
+                            <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+                            <feMerge>
+                                <feMergeNode in="coloredBlur"/>
+                                <feMergeNode in="SourceGraphic"/>
+                            </feMerge>
+                        </filter>
+                    </defs>
+                    <path d="M15 50 Q40 25 65 50 Q90 75 115 50 Q140 25 165 50 Q190 75 215 50 Q235 30 245 45" 
+                          stroke="url(#dragonBody2)" stroke-width="18" fill="none" stroke-linecap="round" filter="url(#dragonGlow)"/>
+                    <circle cx="20" cy="50" r="15" fill="#FFD700"/>
+                    <circle cx="12" cy="42" r="4" fill="black"/>
+                    <path d="M8 35 L0 15 L20 32" fill="#FF4500"/>
+                    <path d="M20 32 L12 8 L32 28" fill="#FF4500"/>
+                    <path d="M32 28 L25 5 L45 25" fill="#FF4500"/>
+                    <ellipse cx="65" cy="47" rx="10" ry="7" fill="url(#dragonScale2)" opacity="0.7"/>
+                    <ellipse cx="100" cy="53" rx="10" ry="7" fill="url(#dragonScale2)" opacity="0.7"/>
+                    <ellipse cx="140" cy="47" rx="10" ry="7" fill="url(#dragonScale2)" opacity="0.7"/>
+                    <ellipse cx="180" cy="53" rx="10" ry="7" fill="url(#dragonScale2)" opacity="0.7"/>
+                    <path d="M215 45 Q222 25 228 45 Q235 25 240 45" stroke="#FF4500" stroke-width="4" fill="none"/>
+                    <path d="M40 62 L32 85 L50 68" fill="#FFD700" opacity="0.8"/>
+                    <path d="M80 68 L72 92 L90 75" fill="#FFD700" opacity="0.8"/>
+                    <path d="M130 62 L122 85 L140 68" fill="#FFD700" opacity="0.8"/>
+                    <path d="M180 68 L172 92 L190 75" fill="#FFD700" opacity="0.8"/>
+                </svg>
+            `;
+            container.appendChild(dragon);
+            
+            let dragonX = -250;
+            const dragonSpeed = 7;
+            let dragonPoints = 0;
+            let hitTargets = [];
+            
+            const dragonInterval = setInterval(() => {
+                dragonX += dragonSpeed;
+                dragon.style.left = dragonX + 'px';
+                
+                const dragonRect = dragon.getBoundingClientRect();
+                
+                targets.forEach((target, index) => {
+                    if (hitTargets.includes(index)) return;
+                    
+                    const type = targetTypes[target.type];
+                    const targetCenterX = target.x;
+                    const targetCenterY = target.y;
+                    
+                    if (targetCenterX > dragonRect.left && targetCenterX < dragonRect.right &&
+                        targetCenterY > dragonRect.top - 50 && targetCenterY < dragonRect.bottom + 50) {
+                        
+                        dragonPoints += Math.abs(type.points);
+                        hitTargets.push(index);
+                        
+                        showScorePopup(targetCenterX, targetCenterY, type.points, type.points < 0);
+                        createHitEffect(targetCenterX, targetCenterY, type.color);
+                    }
+                });
+                
+                if (dragonX > width + 250) {
+                    clearInterval(dragonInterval);
+                    dragon.remove();
+                    dragonActive = false;
+                    
+                    if (dragonPoints > 0) {
+                        score += dragonPoints;
+                        showNotification('🐉 飞龙在天!', `+${dragonPoints}分！`);
+                        updateUI();
+                        checkUnlocks();
+                    }
+                    
+                    targets = targets.filter((_, i) => !hitTargets.includes(i));
+                }
+            }, 25);
+        }
+
+        function showLionDance() {
+            playSound('lion');
+            
+            const container = document.getElementById('gameContainer');
+            const lion = document.createElement('div');
+            lion.className = 'lion-dance';
+            lion.style.left = '-180px';
+            lion.innerHTML = `
+                <svg width="180" height="150" viewBox="0 0 180 150">
+                    <defs>
+                        <radialGradient id="lionHead2" cx="50%" cy="30%" r="60%">
+                            <stop offset="0%" style="stop-color:#FF6347"/>
+                            <stop offset="100%" style="stop-color:#8B0000"/>
+                        </radialGradient>
+                        <radialGradient id="lionFur" cx="50%" cy="50%" r="50%">
+                            <stop offset="0%" style="stop-color:#FFD700"/>
+                            <stop offset="100%" style="stop-color:#DAA520"/>
+                        </radialGradient>
+                        <filter id="lionGlow">
+                            <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+                            <feMerge>
+                                <feMergeNode in="coloredBlur"/>
+                                <feMergeNode in="SourceGraphic"/>
+                            </feMerge>
+                        </filter>
+                    </defs>
+                    <ellipse cx="90" cy="55" rx="70" ry="55" fill="url(#lionHead2)" filter="url(#lionGlow)"/>
+                    <ellipse cx="90" cy="60" rx="58" ry="42" fill="#DC143C"/>
+                    <ellipse cx="90" cy="35" rx="45" ry="25" fill="url(#lionFur)"/>
+                    <circle cx="55" cy="50" r="18" fill="white"/>
+                    <circle cx="125" cy="50" r="18" fill="white"/>
+                    <circle cx="55" cy="50" r="10" fill="black"/>
+                    <circle cx="125" cy="50" r="10" fill="black"/>
+                    <circle cx="58" cy="47" r="3" fill="white"/>
+                    <circle cx="128" cy="47" r="3" fill="white"/>
+                    <ellipse cx="90" cy="75" rx="25" ry="15" fill="#FFD700"/>
+                    <circle cx="78" cy="73" r="5" fill="black"/>
+                    <circle cx="102" cy="73" r="5" fill="black"/>
+                    <ellipse cx="90" cy="85" rx="8" ry="4" fill="#8B0000"/>
+                    <ellipse cx="45" cy="25" rx="18" ry="12" fill="url(#lionFur)"/>
+                    <ellipse cx="135" cy="25" rx="18" ry="12" fill="url(#lionFur)"/>
+                    <path d="M30 18 Q20 0 40 12" fill="#FF4500"/>
+                    <path d="M150 18 Q160 0 140 12" fill="#FF4500"/>
+                    <path d="M55 12 Q60 -5 68 12" fill="#FF4500"/>
+                    <path d="M112 12 Q120 -5 128 12" fill="#FF4500"/>
+                    <path d="M90 8 Q95 -8 100 8" fill="#FF4500"/>
+                    <rect x="65" y="110" width="50" height="35" rx="8" fill="#FFD700"/>
+                    <rect x="60" y="105" width="60" height="12" fill="#DC143C"/>
+                    <circle cx="90" cy="125" r="8" fill="#FF4500"/>
+                    <rect x="70" y="118" width="8" height="12" fill="#8B0000"/>
+                    <rect x="82" y="118" width="8" height="12" fill="#8B0000"/>
+                    <rect x="94" y="118" width="8" height="12" fill="#8B0000"/>
+                </svg>
+            `;
+            container.appendChild(lion);
+            lion.style.cursor = 'pointer';
+            lion.style.pointerEvents = 'auto';
+            lionElement = lion;
+            lionClicks = 0;
+            lionRunning = false;
+            
+            lion.addEventListener('click', function(e) {
+                e.stopPropagation();
+                if (!gameRunning || lionRunning) return;
+                
+                lionClicks++;
+                playSound('hit');
+                
+                lion.style.transform = `translateY(${bounceY}px) scale(1.1)`;
+                setTimeout(() => {
+                    lion.style.transform = `translateY(${bounceY}px)`;
+                }, 100);
+                
+                if (lionClicks >= 6) {
+                    lionRunning = true;
+                    lion.style.pointerEvents = 'none';
+                    lion.innerHTML = `
+                        <svg width="180" height="130" viewBox="0 0 180 130">
+                            <defs>
+                                <radialGradient id="lionHead3" cx="50%" cy="50%" r="50%">
+                                    <stop offset="0%" style="stop-color:#FF6347"/>
+                                    <stop offset="100%" style="stop-color:#DC143C"/>
+                                </radialGradient>
+                                <linearGradient id="lionFur2" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" style="stop-color:#FFD700"/>
+                                    <stop offset="100%" style="stop-color:#FF4500"/>
+                                </linearGradient>
+                            </defs>
+                            <ellipse cx="90" cy="50" rx="60" ry="45" fill="url(#lionHead3)"/>
+                            <ellipse cx="90" cy="55" rx="48" ry="35" fill="#8B0000"/>
+                            <ellipse cx="90" cy="30" rx="35" ry="20" fill="url(#lionFur2)"/>
+                            <circle cx="60" cy="45" r="15" fill="white"/>
+                            <circle cx="120" cy="45" r="15" fill="white"/>
+                            <circle cx="60" cy="45" r="8" fill="black"/>
+                            <circle cx="120" cy="45" r="8" fill="black"/>
+                            <ellipse cx="90" cy="65" rx="20" ry="12" fill="#FFD700"/>
+                            <ellipse cx="90" cy="75" rx="6" ry="3" fill="#8B0000"/>
+                            <ellipse cx="40" cy="20" rx="15" ry="10" fill="url(#lionFur2)"/>
+                            <ellipse cx="140" cy="20" rx="15" ry="10" fill="url(#lionFur2)"/>
+                            <path d="M25 15 L15 0 L35 10" fill="#FF4500"/>
+                            <path d="M155 15 L165 0 L145 10" fill="#FF4500"/>
+                            <rect x="70" y="90" width="40" height="25" rx="6" fill="#FFD700"/>
+                            <rect x="65" y="85" width="50" height="10" fill="#DC143C"/>
+                            <ellipse cx="45" cy="115" rx="12" ry="8" fill="#FFD700"/>
+                            <ellipse cx="135" cy="115" rx="12" ry="8" fill="#FFD700"/>
+                            <path d="M20 100 Q10 110 25 115" stroke="#FFD700" stroke-width="8" fill="none"/>
+                            <path d="M160 100 Q170 110 155 115" stroke="#FFD700" stroke-width="8" fill="none"/>
+                        </svg>
+                    `;
+                    showNotification('🦁 狮子奔跑!', '点击6次激活奔跑形态！');
+                }
+            });
+            
+            const dog = document.createElement('div');
+            dog.className = 'lion-dance';
+            dog.style.left = '-250px';
+            dog.style.bottom = '15%';
+            dog.innerHTML = `
+                <svg width="60" height="50" viewBox="0 0 60 50">
+                    <ellipse cx="30" cy="35" rx="22" ry="12" fill="#D2691E"/>
+                    <circle cx="30" cy="20" r="14" fill="#D2691E"/>
+                    <ellipse cx="18" cy="8" rx="6" ry="10" fill="#D2691E"/>
+                    <ellipse cx="42" cy="8" rx="6" ry="10" fill="#D2691E"/>
+                    <ellipse cx="18" cy="6" rx="4" ry="6" fill="#DEB887"/>
+                    <ellipse cx="42" cy="6" rx="4" ry="6" fill="#DEB887"/>
+                    <circle cx="24" cy="18" r="4" fill="white"/>
+                    <circle cx="36" cy="18" r="4" fill="white"/>
+                    <circle cx="24" cy="18" r="2" fill="black"/>
+                    <circle cx="36" cy="18" r="2" fill="black"/>
+                    <ellipse cx="30" cy="26" rx="4" ry="3" fill="#333"/>
+                    <ellipse cx="30" cy="28" rx="2" ry="1" fill="#FF69B4"/>
+                    <ellipse cx="12" cy="42" rx="5" ry="8" fill="#D2691E"/>
+                    <ellipse cx="48" cy="42" rx="5" ry="8" fill="#D2691E"/>
+                    <path d="M52 35 Q58 38 55 45" stroke="#D2691E" stroke-width="4" fill="none"/>
+                </svg>
+            `;
+            container.appendChild(dog);
+            
+            let lionX = -180;
+            let dogX = -250;
+            let bounceY = 0;
+            let bounceDir = 1;
+            let dogBounceY = 0;
+            let dogBounceDir = 1;
+            
+            const lionInterval = setInterval(() => {
+                const speed = lionRunning ? 12 : 4;
+                lionX += speed;
+                dogX += speed;
+                bounceY += bounceDir * 3;
+                dogBounceY += dogBounceDir * 4;
+                if (Math.abs(bounceY) > 15) bounceDir *= -1;
+                if (Math.abs(dogBounceY) > 12) dogBounceDir *= -1;
+                
+                lion.style.left = lionX + 'px';
+                lion.style.transform = `translateY(${bounceY}px)`;
+                
+                dog.style.left = dogX + 'px';
+                dog.style.transform = `translateY(${dogBounceY}px)`;
+                
+                if (lionX > width + 180) {
+                    clearInterval(lionInterval);
+                    lion.remove();
+                    dog.remove();
+                    lionElement = null;
+                }
+            }, 30);
+            
+            showNotification('🦁 舞狮表演!', '恭喜达成100分！小狗追狮子 +50分');
+            score += 50;
+            updateUI();
+            checkUnlocks();
+        }
+
+        function showMeteor() {
+            playSound('meteor');
+            
+            const container = document.getElementById('gameContainer');
+            const meteor = document.createElement('div');
+            meteor.className = 'meteor';
+            meteor.style.left = width + 'px';
+            meteor.style.top = '50px';
+            meteor.style.pointerEvents = 'auto';
+            meteor.innerHTML = `
+                <svg width="80" height="40" viewBox="0 0 80 40">
+                    <defs>
+                        <linearGradient id="meteorTrail" x1="100%" y1="50%" x2="0%" y2="50%">
+                            <stop offset="0%" style="stop-color:#FFD700;stop-opacity:1"/>
+                            <stop offset="50%" style="stop-color:#FFA500;stop-opacity:0.7"/>
+                            <stop offset="100%" style="stop-color:#FF4500;stop-opacity:0"/>
+                        </linearGradient>
+                        <filter id="meteorGlow">
+                            <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                            <feMerge>
+                                <feMergeNode in="coloredBlur"/>
+                                <feMergeNode in="SourceGraphic"/>
+                            </feMerge>
+                        </filter>
+                    </defs>
+                    <ellipse cx="70" cy="20" rx="10" ry="10" fill="#FFD700" filter="url(#meteorGlow)"/>
+                    <ellipse cx="70" cy="20" rx="6" ry="6" fill="#FFFACD"/>
+                    <path d="M70 20 L0 20" stroke="url(#meteorTrail)" stroke-width="8" stroke-linecap="round"/>
+                </svg>
+            `;
+            container.appendChild(meteor);
+            
+            let meteorX = width;
+            let meteorY = 50;
+            const meteorSpeed = 5;
+            const meteorAngle = Math.PI / 6;
+            
+            meteor.addEventListener('click', function(e) {
+                e.stopPropagation();
+                activateWish();
+                meteor.remove();
+            });
+            
+            const meteorInterval = setInterval(() => {
+                meteorX -= meteorSpeed;
+                meteorY += meteorSpeed * Math.sin(meteorAngle);
+                meteor.style.left = meteorX + 'px';
+                meteor.style.top = meteorY + 'px';
+                
+                if (meteorX < -100 || meteorY > height + 100) {
+                    clearInterval(meteorInterval);
+                    if (meteor.parentNode) {
+                        meteor.remove();
+                    }
+                }
+            }, 20);
+        }
+
+        function activateWish() {
+            showNotification('🌠 流星许愿!', '恭喜获得加特林机枪！按 G 键使用');
+            gatlingUnlocked = true;
+            document.getElementById('gatlingSkill').classList.add('active');
+        }
+
+        function activateGatling() {
+            if (!gatlingUnlocked || gatlingActive || gatlingCooldown || !gameRunning) return;
+            
+            gatlingActive = true;
+            gatlingCooldown = true;
+            
+            const skillBtn = document.getElementById('gatlingSkill');
+            const cooldownEl = skillBtn.querySelector('.cooldown');
+            cooldownEl.style.display = 'flex';
+            
+            const container = document.getElementById('gameContainer');
+            let gatlingX = 0;
+            const gatlingDuration = 3000;
+            const startTime = Date.now();
+            
+            const gatlingInterval = setInterval(() => {
+                if (Date.now() - startTime > gatlingDuration) {
+                    clearInterval(gatlingInterval);
+                    gatlingActive = false;
+                    
+                    let cooldownTime = 15;
+                    cooldownEl.textContent = cooldownTime;
+                    const cooldownInterval = setInterval(() => {
+                        cooldownTime--;
+                        cooldownEl.textContent = cooldownTime;
+                        if (cooldownTime <= 0) {
+                            clearInterval(cooldownInterval);
+                            gatlingCooldown = false;
+                            cooldownEl.style.display = 'none';
+                        }
+                    }, 1000);
+                    return;
+                }
+                
+                const randomX = Math.random() * width;
+                const randomY = Math.random() * (height * 0.7) + height * 0.1;
+                
+                playSound('gatling');
+                
+                const firework = document.createElement('div');
+                firework.className = 'gatling-effect';
+                firework.style.left = randomX + 'px';
+                firework.style.top = randomY + 'px';
+                
+                const colors = ['#ff4500', '#ffd700', '#ff69b4', '#00ff00', '#00bfff', '#ff00ff'];
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                
+                for (let i = 0; i < 15; i++) {
+                    const particle = document.createElement('div');
+                    particle.style.position = 'absolute';
+                    particle.style.width = '6px';
+                    particle.style.height = '6px';
+                    particle.style.borderRadius = '50%';
+                    particle.style.background = color;
+                    particle.style.boxShadow = `0 0 8px ${color}`;
+                    particle.style.left = '0';
+                    particle.style.top = '0';
+                    firework.appendChild(particle);
+                    
+                    const angle = (i / 15) * Math.PI * 2;
+                    const distance = 40 + Math.random() * 40;
+                    
+                    particle.animate([
+                        { transform: 'translate(-50%, -50%) scale(1)', opacity: 1 },
+                        { transform: `translate(${Math.cos(angle) * distance}px, ${Math.sin(angle) * distance}px) scale(0)`, opacity: 0 }
+                    ], {
+                        duration: 400,
+                        easing: 'ease-out'
+                    });
+                }
+                
+                container.appendChild(firework);
+                setTimeout(() => firework.remove(), 400);
+                
+                for (let i = targets.length - 1; i >= 0; i--) {
+                    const target = targets[i];
+                    const dx = randomX - target.x;
+                    const dy = randomY - target.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (distance < 80) {
+                        const type = targetTypes[target.type];
+                        score += Math.abs(type.points);
+                        showScorePopup(target.x, target.y, type.points, type.points < 0);
+                        createHitEffect(target.x, target.y, type.color);
+                        targets.splice(i, 1);
+                    }
+                }
+                
+                updateUI();
+                checkUnlocks();
+            }, 100);
+        }
+
+        function gameLoop() {
+            if (!gameRunning) return;
+            
+            drawSnow();
+            updateTargets();
+            drawTargets();
+            
+            requestAnimationFrame(gameLoop);
+        }
+
+        function startGame() {
+            initAudio();
+            
+            document.getElementById('startScreen').style.display = 'none';
+            document.getElementById('endScreen').style.display = 'none';
+            
+            score = 0;
+            timeLeft = 120;
+            combo = 0;
+            totalHits = 0;
+            totalShots = 0;
+            targets = [];
+            gameRunning = true;
+            
+            fireworkUnlocked = false;
+            fireworkCooldown = false;
+            lionDanceUnlocked = false;
+            lionDanceShown = false;
+            dragonActive = false;
+            gatlingUnlocked = false;
+            gatlingActive = false;
+            gatlingCooldown = false;
+            meteorShown = false;
+            
+            doorBell1Clicks = 0;
+            doorBell2Clicks = 0;
+            cat1Shown = false;
+            cat2Shown = false;
+            catEverShown = false;
+            bianpaoClicks = 0;
+            moonPhaseChanged = false;
+            tree1Clicks = 0;
+            tree2Clicks = 0;
+            isChristmasTree = false;
+            
+            resetMoonToFull();
+            
+            document.getElementById('fireworkSkill').classList.remove('active');
+            document.getElementById('gatlingSkill').classList.remove('active');
+            
+            updateUI();
+            document.getElementById('timer').textContent = '时间: ' + timeLeft;
+            
+            startMoonStarTimer();
+            startWindowCatTimer();
+            
+            gameTimer = setInterval(() => {
+                timeLeft--;
+                document.getElementById('timer').textContent = '时间: ' + timeLeft;
+                
+                if (timeLeft === 60 && !moonPhaseChanged) {
+                    moonPhaseChanged = true;
+                    changeMoonToCrescent();
+                }
+                
+                if (timeLeft <= 0) {
+                    endGame();
+                }
+            }, 1000);
+            
+            gameLoop();
+        }
+
+        function endGame() {
+            gameRunning = false;
+            clearInterval(gameTimer);
+            clearInterval(moonStarTimer);
+            clearInterval(windowCatTimer);
+            
+            document.getElementById('endScreen').style.display = 'flex';
+            document.getElementById('finalScore').textContent = score;
+            
+            const accuracy = totalShots > 0 ? Math.round((totalHits / totalShots) * 100) : 0;
+            document.getElementById('scoreDetail').innerHTML = 
+                `命中次数: ${totalHits}<br>` +
+                `射击次数: ${totalShots}<br>` +
+                `命中率: ${accuracy}%`;
+        }
+
+        function handleClick(e) {
+            if (!gameRunning) return;
+            
+            const rect = gameCanvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            checkHit(x, y);
+        }
+
+        function handleTouch(e) {
+            e.preventDefault();
+            if (!gameRunning) return;
+            
+            const rect = gameCanvas.getBoundingClientRect();
+            const touch = e.touches[0];
+            const x = touch.clientX - rect.left;
+            const y = touch.clientY - rect.top;
+            
+            checkHit(x, y);
+        }
+
+        function handleKeyPress(e) {
+            if (e.key === 'f' || e.key === 'F') {
+                activateFirework();
+            }
+            if (e.key === 'g' || e.key === 'G') {
+                activateGatling();
+            }
+        }
+
+        window.addEventListener('resize', () => {
+            resize();
+            initSnow();
+        });
+
+        gameCanvas.addEventListener('click', handleClick);
+        gameCanvas.addEventListener('touchstart', handleTouch);
+        document.addEventListener('keydown', handleKeyPress);
+
+        document.getElementById('startBtn').addEventListener('click', startGame);
+        document.getElementById('restartBtn').addEventListener('click', startGame);
+
+        resize();
+        initSnow();
+        setupHouseInteractions();
+        setupMoonClick();
+        setupTreeInteractions();
+
+        function changeMoonToCrescent() {
+            const moon = document.getElementById('moon');
+            moon.innerHTML = `
+                <svg viewBox="0 0 100 100" width="100%" height="100%">
+                    <defs>
+                        <filter id="moonGlowCrescent">
+                            <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                            <feMerge>
+                                <feMergeNode in="coloredBlur"/>
+                                <feMergeNode in="SourceGraphic"/>
+                            </feMerge>
+                        </filter>
+                    </defs>
+                    <path d="M 50 5 A 45 45 0 1 1 50 95 A 35 35 0 1 0 50 5" 
+                          fill="#FFFACD" 
+                          filter="url(#moonGlowCrescent)"
+                          style="filter: drop-shadow(0 0 20px rgba(255, 250, 205, 0.8));"/>
+                </svg>
+            `;
+            showNotification('🌙 月亮变化!', '圆月变成了弯月');
+        }
+
+        function resetMoonToFull() {
+            const moon = document.getElementById('moon');
+            moon.innerHTML = `
+                <defs>
+                    <filter id="moonGlow">
+                        <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+                        <feMerge>
+                            <feMergeNode in="coloredBlur"/>
+                            <feMergeNode in="SourceGraphic"/>
+                        </feMerge>
+                    </filter>
+                </defs>
+                <circle cx="50" cy="50" r="40" fill="#FFFACD" filter="url(#moonGlow)" style="filter: drop-shadow(0 0 25px rgba(255, 250, 205, 0.9));"/>
+            `;
+        }
+
+        function setupTreeInteractions() {
+            const tree1 = document.getElementById('tree1');
+            const tree2 = document.getElementById('tree2');
+            
+            tree1.style.cursor = 'pointer';
+            tree2.style.cursor = 'pointer';
+            
+            tree1.addEventListener('click', function(e) {
+                e.stopPropagation();
+                if (!gameRunning) return;
+                
+                tree1Clicks++;
+                clearTimeout(tree1Timeout);
+                tree1Timeout = setTimeout(() => { tree1Clicks = 0; }, 3000);
+                
+                if (tree1Clicks >= 5) {
+                    tree1Clicks = 0;
+                    dropPinecone(tree1);
+                }
+            });
+            
+            tree2.addEventListener('click', function(e) {
+                e.stopPropagation();
+                if (!gameRunning || isChristmasTree) return;
+                
+                tree2Clicks++;
+                clearTimeout(tree2Timeout);
+                tree2Timeout = setTimeout(() => { tree2Clicks = 0; }, 3000);
+                
+                if (tree2Clicks >= 5) {
+                    tree2Clicks = 0;
+                    transformToChristmasTree(tree2);
+                }
+            });
+        }
+
+        function dropPinecone(tree) {
+            playSound('hit');
+            const rect = tree.getBoundingClientRect();
+            const container = document.getElementById('gameContainer');
+            
+            for (let i = 0; i < 3; i++) {
+                setTimeout(() => {
+                    const pinecone = document.createElement('div');
+                    pinecone.style.position = 'absolute';
+                    pinecone.style.left = (rect.left + rect.width / 2 + (Math.random() - 0.5) * 40) + 'px';
+                    pinecone.style.top = rect.top + 'px';
+                    pinecone.style.zIndex = '5';
+                    pinecone.innerHTML = `
+                        <svg width="20" height="25" viewBox="0 0 20 25">
+                            <ellipse cx="10" cy="15" rx="8" ry="10" fill="#8B4513"/>
+                            <ellipse cx="10" cy="15" rx="6" ry="8" fill="#A0522D"/>
+                            <rect x="8" y="2" width="4" height="8" fill="#654321"/>
+                            <ellipse cx="10" cy="5" rx="3" ry="2" fill="#228B22"/>
+                        </svg>
+                    `;
+                    container.appendChild(pinecone);
+                    
+                    let y = rect.top;
+                    let x = parseFloat(pinecone.style.left);
+                    let velocityY = 0;
+                    let velocityX = (Math.random() - 0.5) * 3;
+                    
+                    const fallInterval = setInterval(() => {
+                        velocityY += 0.5;
+                        y += velocityY;
+                        x += velocityX;
+                        pinecone.style.top = y + 'px';
+                        pinecone.style.left = x + 'px';
+                        
+                        if (y > height - 50) {
+                            clearInterval(fallInterval);
+                            setTimeout(() => pinecone.remove(), 1000);
+                        }
+                    }, 20);
+                }, i * 200);
+            }
+            
+            showNotification('🌰 松子掉落!', '点击树木获得松子');
+        }
+
+        function transformToChristmasTree(tree) {
+            playSound('firework');
+            isChristmasTree = true;
+            
+            const treeTop = tree.querySelector('.tree-top');
+            treeTop.style.borderBottomColor = '#228B22';
+            
+            const container = document.getElementById('gameContainer');
+            const rect = tree.getBoundingClientRect();
+            
+            for (let i = 0; i < 8; i++) {
+                const ornament = document.createElement('div');
+                ornament.style.position = 'absolute';
+                ornament.style.width = '10px';
+                ornament.style.height = '10px';
+                ornament.style.borderRadius = '50%';
+                ornament.style.background = ['#ff0000', '#ffd700', '#0000ff', '#ff69b4', '#00ff00'][i % 5];
+                ornament.style.boxShadow = '0 0 8px currentColor';
+                ornament.style.left = (rect.left + rect.width / 2 + (Math.random() - 0.5) * 60) + 'px';
+                ornament.style.top = (rect.top + 20 + Math.random() * 60) + 'px';
+                ornament.style.zIndex = '2';
+                ornament.className = 'christmas-ornament';
+                container.appendChild(ornament);
+            }
+            
+            const star = document.createElement('div');
+            star.style.position = 'absolute';
+            star.style.left = (rect.left + rect.width / 2 - 10) + 'px';
+            star.style.top = (rect.top - 5) + 'px';
+            star.style.zIndex = '2';
+            star.innerHTML = `
+                <svg width="20" height="20" viewBox="0 0 20 20">
+                    <polygon points="10,0 12,8 20,8 14,13 16,20 10,16 4,20 6,13 0,8 8,8" fill="#FFD700"/>
+                </svg>
+            `;
+            star.className = 'christmas-star';
+            container.appendChild(star);
+            
+            showNotification('🎄 圣诞树!', '点击右边树木5次变身圣诞树');
+        }
+
+        function setupMoonClick() {
+            const moon = document.getElementById('moon');
+            moon.style.cursor = 'pointer';
+            moon.addEventListener('click', function(e) {
+                e.stopPropagation();
+                
+                moonClicks++;
+                clearTimeout(moonClickTimeout);
+                moonClickTimeout = setTimeout(() => { moonClicks = 0; }, 3000);
+                
+                moon.style.transform = 'scale(1.2)';
+                setTimeout(() => {
+                    moon.style.transform = 'scale(1)';
+                }, 150);
+                
+                if (moonClicks >= 10 && !inOtherWorld) {
+                    moonClicks = 0;
+                    teleportToOtherWorld();
+                }
+            });
+        }
+
+        function teleportToOtherWorld() {
+            inOtherWorld = true;
+            
+            const container = document.getElementById('gameContainer');
+            const moon = document.getElementById('moon');
+            const moonRect = moon.getBoundingClientRect();
+            
+            const sharingan = document.createElement('div');
+            sharingan.style.position = 'absolute';
+            sharingan.style.left = (moonRect.left + moonRect.width / 2 - 75) + 'px';
+            sharingan.style.top = (moonRect.top + moonRect.height / 2 - 75) + 'px';
+            sharingan.style.zIndex = '101';
+            sharingan.innerHTML = `
+                <svg width="150" height="150" viewBox="0 0 150 150">
+                    <defs>
+                        <radialGradient id="sharinganGrad" cx="50%" cy="50%" r="50%">
+                            <stop offset="0%" style="stop-color:#ff0000"/>
+                            <stop offset="70%" style="stop-color:#8b0000"/>
+                            <stop offset="100%" style="stop-color:#4a0000"/>
+                        </radialGradient>
+                    </defs>
+                    <circle cx="75" cy="75" r="70" fill="url(#sharinganGrad)" stroke="#000" stroke-width="3"/>
+                    <circle cx="75" cy="75" r="15" fill="#000"/>
+                    <circle cx="75" cy="75" r="8" fill="#ff0000"/>
+                    <ellipse cx="75" cy="35" rx="12" ry="25" fill="#000" transform="rotate(0, 75, 75)"/>
+                    <ellipse cx="45" cy="95" rx="12" ry="25" fill="#000" transform="rotate(120, 75, 75)"/>
+                    <ellipse cx="105" cy="95" rx="12" ry="25" fill="#000" transform="rotate(240, 75, 75)"/>
+                    <circle cx="75" cy="35" r="5" fill="#ff0000"/>
+                    <circle cx="45" cy="95" r="5" fill="#ff0000"/>
+                    <circle cx="105" cy="95" r="5" fill="#ff0000"/>
+                </svg>
+            `;
+            container.appendChild(sharingan);
+            
+            sharingan.animate([
+                { transform: 'scale(0) rotate(0deg)', opacity: 0 },
+                { transform: 'scale(1.5) rotate(360deg)', opacity: 1 }
+            ], {
+                duration: 800,
+                easing: 'ease-out'
+            });
+            
+            if ('speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance('しゃりんがん');
+                utterance.lang = 'ja-JP';
+                utterance.rate = 0.8;
+                utterance.pitch = 0.9;
+                speechSynthesis.speak(utterance);
+            }
+            
+            playSound('sailor');
+            
+            setTimeout(() => {
+                sharingan.animate([
+                    { transform: 'scale(1.5) rotate(360deg)', opacity: 1 },
+                    { transform: 'scale(3) rotate(720deg)', opacity: 0 }
+                ], {
+                    duration: 500,
+                    easing: 'ease-in'
+                }).onfinish = () => sharingan.remove();
+            }, 1500);
+            
+            const flash = document.createElement('div');
+            flash.style.position = 'absolute';
+            flash.style.left = '0';
+            flash.style.top = '0';
+            flash.style.width = '100%';
+            flash.style.height = '100%';
+            flash.style.background = 'white';
+            flash.style.zIndex = '100';
+            flash.style.pointerEvents = 'none';
+            container.appendChild(flash);
+            
+            setTimeout(() => {
+                flash.remove();
+                
+                container.style.transition = 'background 1s';
+                container.style.background = 'linear-gradient(180deg, #1a0033 0%, #330066 20%, #4d0099 40%, #6600cc 60%, #9900ff 80%, #cc66ff 100%)';
+                
+                moon.style.transition = 'all 1s';
+                moon.style.width = '150px';
+                moon.style.height = '150px';
+                
+                showNotification('🌙 传送异世界!', '点击月亮返回原世界');
+                
+                createOtherWorldElements();
+                
+                moon.onclick = function(e) {
+                    e.stopPropagation();
+                    returnToNormalWorld();
+                };
+            }, 2000);
+        }
+
+        function createOtherWorldElements() {
+            const container = document.getElementById('gameContainer');
+            
+            for (let i = 0; i < 20; i++) {
+                const star = document.createElement('div');
+                star.style.position = 'absolute';
+                star.style.width = '4px';
+                star.style.height = '4px';
+                star.style.background = '#fff';
+                star.style.borderRadius = '50%';
+                star.style.boxShadow = '0 0 10px #fff';
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 70 + '%';
+                star.style.zIndex = '0';
+                star.style.animation = 'starTwinkle 0.5s ease-in-out infinite alternate';
+                star.className = 'other-world-star';
+                container.appendChild(star);
+            }
+            
+            for (let i = 0; i < 5; i++) {
+                const floating = document.createElement('div');
+                floating.style.position = 'absolute';
+                floating.style.width = '30px';
+                floating.style.height = '30px';
+                floating.style.borderRadius = '50%';
+                floating.style.background = `hsl(${Math.random() * 360}, 70%, 60%)`;
+                floating.style.opacity = '0.5';
+                floating.style.left = Math.random() * 80 + 10 + '%';
+                floating.style.top = Math.random() * 60 + 10 + '%';
+                floating.style.zIndex = '0';
+                floating.style.animation = `float ${3 + Math.random() * 2}s ease-in-out infinite`;
+                floating.className = 'other-world-floating';
+                container.appendChild(floating);
+            }
+        }
+
+        function returnToNormalWorld() {
+            inOtherWorld = false;
+            
+            const container = document.getElementById('gameContainer');
+            const flash = document.createElement('div');
+            flash.style.position = 'absolute';
+            flash.style.left = '0';
+            flash.style.top = '0';
+            flash.style.width = '100%';
+            flash.style.height = '100%';
+            flash.style.background = 'white';
+            flash.style.zIndex = '100';
+            flash.style.pointerEvents = 'none';
+            container.appendChild(flash);
+            
+            setTimeout(() => {
+                flash.remove();
+                
+                container.style.background = 'linear-gradient(180deg, #0a0a1a 0%, #1a1a2e 20%, #16213e 40%, #0f3460 70%, #1a3a5c 85%, #e94560 100%)';
+                
+                const moon = document.getElementById('moon');
+                moon.style.width = '100px';
+                moon.style.height = '100px';
+                
+                document.querySelectorAll('.other-world-star').forEach(el => el.remove());
+                document.querySelectorAll('.other-world-floating').forEach(el => el.remove());
+                
+                showNotification('🌍 返回原世界!', '欢迎回来！');
+                
+                moon.onclick = null;
+                setupMoonClick();
+            }, 500);
+        }
+
+        function previewLoop() {
+            if (!gameRunning) {
+                drawSnow();
+                requestAnimationFrame(previewLoop);
+            }
+        }
+        previewLoop();
+    </script>
+</body>
+</html>
