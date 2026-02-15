@@ -2,7 +2,9 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
     <title>春节射击游戏 - 年兽大作战</title>
     <style>
         * {
@@ -479,8 +481,8 @@
             width: 25px;
             height: 45px;
             background: linear-gradient(90deg, #8b4513, #a0522d, #8b4513);
-            top: -40px;
-            right: 20px;
+            top: -35px;
+            right: 15px;
             border-radius: 3px 3px 0 0;
             border: 2px solid #5a3d2b;
         }
@@ -821,6 +823,42 @@
             pointer-events: none;
             z-index: 8;
         }
+
+        @media (max-width: 768px) {
+            .title { font-size: 32px; }
+            .subtitle { font-size: 18px; }
+            .instructions { font-size: 14px; padding: 15px; }
+            .instructions p { margin-bottom: 8px; }
+            .btn { padding: 12px 40px; font-size: 20px; }
+            .ui-box { padding: 6px 12px; font-size: 16px; }
+            #score { font-size: 18px; }
+            #skillBox { top: 70px; right: 10px; gap: 8px; }
+            .skill-btn { width: 55px; height: 55px; font-size: 12px; }
+            .skill-btn span:first-child { font-size: 20px; }
+            .notification { padding: 15px 30px; font-size: 20px; }
+            .house { transform: scale(0.8); }
+            .tree { transform: scale(0.7); }
+            .lantern { width: 45px; height: 60px; }
+            .moon { width: 70px; height: 70px; }
+        }
+
+        @media (max-width: 480px) {
+            .title { font-size: 24px; }
+            .subtitle { font-size: 14px; }
+            .instructions { font-size: 12px; padding: 10px; max-width: 90%; }
+            .btn { padding: 10px 30px; font-size: 18px; }
+            .ui-box { padding: 5px 10px; font-size: 14px; }
+            #score { font-size: 16px; }
+            #timer { font-size: 14px; }
+            .skill-btn { width: 50px; height: 50px; font-size: 10px; }
+            .skill-btn span:first-child { font-size: 18px; }
+            .skill-btn span:nth-child(2) { font-size: 8px; }
+            .notification { padding: 12px 25px; font-size: 16px; }
+            .house { transform: scale(0.6); }
+            .tree { transform: scale(0.5); }
+            .lantern { width: 35px; height: 50px; }
+            .moon { width: 50px; height: 50px; }
+        }
     </style>
 </head>
 <body>
@@ -941,11 +979,10 @@
                 <p>点击射击年兽(25分)、红包(15分)、鞭炮(10分)得分</p>
                 <p>⚠️ 小心福字会 <span>-20分</span> | 连击获得加分!</p>
                 <p><span>🎮 技能系统:</span></p>
-                <p>50分解锁烟花[F键] | 100分舞狮表演</p>
-                <p>200分流星许愿→加特林机枪[G键]</p>
-                <p><span>🌟 彩蛋:</span></p>
-                <p>🌙 月牙星星→美少女战士 | 🏠 门铃→小猫</p>
-                <p>🧨 连续3次鞭炮→飞龙 | 🪟 点击窗户+5分</p>
+                <p>50分解锁烟花[F键] | 每200分舞狮表演</p>
+                <p>500分流星许愿→加特林机枪[G键]</p>
+                <p><span>💡 提示:</span></p>
+                <p>游戏中隐藏着许多彩蛋，等待你去发现!</p>
             </div>
         </div>
         
@@ -953,6 +990,14 @@
             <div class="title">🎊 游戏结束 🎊</div>
             <div id="finalScore">0</div>
             <div class="score-detail" id="scoreDetail"></div>
+            <div id="nameInput" style="display:none; margin: 15px 0;">
+                <input type="text" id="playerName" placeholder="输入你的名字" maxlength="10" style="padding: 10px 20px; font-size: 18px; border-radius: 10px; border: 2px solid #ffd700; background: rgba(0,0,0,0.5); color: #ffd700; text-align: center;">
+                <button class="btn" id="submitScore" style="margin-top: 10px;">提交分数</button>
+            </div>
+            <div id="leaderboard" style="display:none; margin: 15px 0; background: rgba(0,0,0,0.5); padding: 15px; border-radius: 15px; border: 2px solid #ffd700; min-width: 250px;">
+                <div style="color: #ffd700; font-size: 20px; margin-bottom: 10px;">🏆 排行榜</div>
+                <div id="leaderboardList"></div>
+            </div>
             <button class="btn" id="restartBtn">再来一局</button>
         </div>
     </div>
@@ -1116,6 +1161,7 @@
         let fireworkCooldown = false;
         let lionDanceUnlocked = false;
         let lionDanceShown = false;
+        let lastLionDanceScore = 0;
         let gatlingUnlocked = false;
         let gatlingActive = false;
         let gatlingCooldown = false;
@@ -1137,10 +1183,13 @@
         let cat1Shown = false;
         let cat2Shown = false;
         let catEverShown = false;
-        
         let bianpaoClicks = 0;
         let bianpaoTimeout = null;
         let dragonActive = false;
+        
+        let easterEggsFound = 0;
+        const totalEasterEggs = 10;
+        let easterEggHints = [];
         
         let lionClicks = 0;
         let lionElement = null;
@@ -1153,6 +1202,12 @@
         let tree1Timeout = null;
         let tree2Timeout = null;
         let isChristmasTree = false;
+        
+        let bellImageClicks = 0;
+        let bellImageShown = false;
+        
+        let easterEggHintShown1 = false;
+        let easterEggHintShown2 = false;
         
         const targetTypes = {
             nianshou: {
@@ -1489,23 +1544,25 @@
             return false;
         }
 
+        function foundEasterEgg(name, hint) {
+            if (easterEggHints.includes(name)) return;
+            easterEggHints.push(name);
+            easterEggsFound++;
+        }
+
         function checkUnlocks() {
             if (score >= 50 && !fireworkUnlocked) {
                 fireworkUnlocked = true;
                 document.getElementById('fireworkSkill').classList.add('active');
-                showNotification('🎆 烟花技能已解锁!', '按 F 键释放烟花，清除所有目标！');
+                showNotification('🎆 烟花技能已解锁!', '按 F 键或点击释放烟花！');
             }
             
-            if (score >= 100 && !lionDanceUnlocked) {
-                lionDanceUnlocked = true;
-            }
-            
-            if (lionDanceUnlocked && !lionDanceShown && gameRunning) {
-                lionDanceShown = true;
+            if (score >= 100 && score - lastLionDanceScore >= 200 && gameRunning) {
+                lastLionDanceScore = Math.floor(score / 200) * 200;
                 showLionDance();
             }
             
-            if (score >= 200 && !meteorShown && gameRunning) {
+            if (score >= 500 && !meteorShown && gameRunning) {
                 meteorShown = true;
                 showMeteor();
             }
@@ -2003,6 +2060,7 @@
                 if (targets.length > 0) {
                     score += totalPoints;
                     showNotification('🌙 美少女战士!', `代表月亮消灭 ${targets.length} 个目标！+${totalPoints}分`);
+                    foundEasterEgg('美少女战士', '试试点击月亮10次？');
                     updateUI();
                     checkUnlocks();
                 }
@@ -2072,12 +2130,19 @@
                 clearTimeout(doorBell1Timeout);
                 doorBell1Timeout = setTimeout(() => { doorBell1Clicks = 0; }, 2000);
                 
+                bellImageClicks++;
+                
                 bell1.style.transform = 'translateX(-50%) scale(1.2)';
                 setTimeout(() => {
                     bell1.style.transform = 'translateX(-50%)';
                 }, 150);
                 
-                if (doorBell1Clicks >= 3) {
+                if (bellImageClicks >= 10) {
+                    showBellImage();
+                    bellImageClicks = 0;
+                }
+                
+                if (doorBell1Clicks >= 6) {
                     cat1Shown = true;
                     showCat1();
                     doorBell1Clicks = 0;
@@ -2098,12 +2163,88 @@
                     door2.style.transform = 'translateX(-50%)';
                 }, 150);
                 
-                if (doorBell2Clicks >= 3) {
+                if (doorBell2Clicks >= 5) {
                     cat2Shown = true;
                     showCat2();
                     doorBell2Clicks = 0;
                 }
             });
+        }
+
+        function showBellImage() {
+            playSound('firework');
+            const container = document.getElementById('gameContainer');
+            
+            const overlay = document.createElement('div');
+            overlay.style.position = 'absolute';
+            overlay.style.left = '0';
+            overlay.style.top = '0';
+            overlay.style.width = '100%';
+            overlay.style.height = '100%';
+            overlay.style.background = 'rgba(0,0,0,0.7)';
+            overlay.style.zIndex = '50';
+            overlay.style.display = 'flex';
+            overlay.style.flexDirection = 'column';
+            overlay.style.justifyContent = 'center';
+            overlay.style.alignItems = 'center';
+            
+            const img = document.createElement('img');
+            img.src = '铃铛.png';
+            img.style.maxWidth = '60%';
+            img.style.maxHeight = '50%';
+            img.style.borderRadius = '20px';
+            img.style.boxShadow = '0 0 50px rgba(255, 215, 0, 0.8)';
+            img.style.animation = 'pulse 1s ease-in-out infinite';
+            
+            const dialog = document.createElement('div');
+            dialog.style.marginTop = '20px';
+            dialog.style.textAlign = 'center';
+            dialog.style.color = '#fff';
+            dialog.style.fontSize = '18px';
+            dialog.style.lineHeight = '2';
+            dialog.style.textShadow = '2px 2px 4px rgba(0,0,0,0.8)';
+            dialog.innerHTML = `
+                <div style="color: #FFB6C1;">铃铛：你瞅啥？没见过美女。</div>
+                <div style="color: #87CEEB;">我：瞅你咋地？看你脸大。</div>
+                <div style="color: #FFB6C1;">铃铛：喵～用眼神杀死你。</div>
+            `;
+            
+            const countdown = document.createElement('div');
+            countdown.style.marginTop = '15px';
+            countdown.style.color = '#ffd700';
+            countdown.style.fontSize = '16px';
+            countdown.id = 'bellCountdown';
+            
+            overlay.appendChild(img);
+            overlay.appendChild(dialog);
+            overlay.appendChild(countdown);
+            container.appendChild(overlay);
+            
+            let closeable = false;
+            let secondsLeft = 3;
+            
+            countdown.textContent = `请等待 ${secondsLeft} 秒...`;
+            
+            const countdownInterval = setInterval(() => {
+                secondsLeft--;
+                if (secondsLeft > 0) {
+                    countdown.textContent = `请等待 ${secondsLeft} 秒...`;
+                } else {
+                    clearInterval(countdownInterval);
+                    closeable = true;
+                    countdown.textContent = '点击任意位置关闭';
+                    countdown.style.color = '#00ff00';
+                }
+            }, 1000);
+            
+            overlay.addEventListener('click', function() {
+                if (!closeable) return;
+                overlay.style.opacity = '0';
+                overlay.style.transition = 'opacity 0.5s';
+                setTimeout(() => overlay.remove(), 500);
+            });
+            
+            foundEasterEgg('铃铛图片', '还有更多彩蛋等你发现！');
         }
 
         function showCat1() {
@@ -2136,7 +2277,7 @@
                         <line x1="55" y1="25" x2="65" y2="22" stroke="#E8D4A8" stroke-width="2"/>
                         <line x1="55" y1="30" x2="65" y2="32" stroke="#E8D4A8" stroke-width="2"/>
                     </svg>
-                    <div class="cat-meow">喵~ 铃铛 🐱</div>
+                    <div class="cat-meow">喵~ Her's 铃铛 🐱</div>
                 </div>
             `;
             container.appendChild(cat);
@@ -2148,7 +2289,8 @@
             }, 6000);
             
             score += 20;
-            showNotification('🐱 铃铛小猫!', '+20分');
+            showNotification('🐱 Her\'s 铃铛!', '+20分');
+            foundEasterEgg('Her\'s 铃铛', '右边门也有小猫哦！');
             catEverShown = true;
             updateUI();
             checkUnlocks();
@@ -2163,7 +2305,7 @@
             
             const cats = [
                 { bodyColor: '#3D3D3D', patternColor: '#1A1A1A', eyeColor: '#2E8B57', name: '果酱', offsetX: -30 },
-                { bodyColor: '#B8B8B8', patternColor: '#4A6FA5', eyeColor: '#4169E1', name: '酱', offsetX: 30 }
+                { bodyColor: '#B8B8B8', patternColor: '#4A6FA5', eyeColor: '#4169E1', name: '酱酱', offsetX: 30 }
             ];
             
             cats.forEach((catData, index) => {
@@ -2211,7 +2353,8 @@
             });
             
             score += 30;
-            showNotification('🐱 两只小猫!', '果酱 & 酱 +30分');
+            showNotification('🐱 晓熙的果酱 & 酱酱!', '+30分');
+            foundEasterEgg('晓熙的果酱&酱酱', '小猫会在放烟花时出来看！');
             catEverShown = true;
             updateUI();
             checkUnlocks();
@@ -2303,6 +2446,7 @@
                     if (dragonPoints > 0) {
                         score += dragonPoints;
                         showNotification('🐉 飞龙在天!', `+${dragonPoints}分！`);
+                        foundEasterEgg('飞龙在天', '试试点击舞狮6次？');
                         updateUI();
                         checkUnlocks();
                     }
@@ -2422,6 +2566,7 @@
                         </svg>
                     `;
                     showNotification('🦁 狮子奔跑!', '点击6次激活奔跑形态！');
+                    foundEasterEgg('奔跑狮子', '试试点击树木？');
                 }
             });
             
@@ -2688,6 +2833,13 @@
             tree1Clicks = 0;
             tree2Clicks = 0;
             isChristmasTree = false;
+            easterEggsFound = 0;
+            easterEggHints = [];
+            lastLionDanceScore = 0;
+            bellImageClicks = 0;
+            bellImageShown = false;
+            easterEggHintShown1 = false;
+            easterEggHintShown2 = false;
             
             resetMoonToFull();
             
@@ -2707,6 +2859,22 @@
                 if (timeLeft === 60 && !moonPhaseChanged) {
                     moonPhaseChanged = true;
                     changeMoonToCrescent();
+                }
+                
+                if (timeLeft === 90 && !easterEggHintShown1) {
+                    easterEggHintShown1 = true;
+                    const remaining = totalEasterEggs - easterEggsFound;
+                    if (remaining > 0) {
+                        showNotification('🥚 彩蛋提示', `还有 ${remaining} 个彩蛋等你发现！`);
+                    }
+                }
+                
+                if (timeLeft === 60 && !easterEggHintShown2) {
+                    easterEggHintShown2 = true;
+                    const remaining = totalEasterEggs - easterEggsFound;
+                    if (remaining > 0) {
+                        showNotification('🥚 彩蛋提示', `还有 ${remaining} 个彩蛋等你发现！`);
+                    }
                 }
                 
                 if (timeLeft <= 0) {
@@ -2730,7 +2898,56 @@
             document.getElementById('scoreDetail').innerHTML = 
                 `命中次数: ${totalHits}<br>` +
                 `射击次数: ${totalShots}<br>` +
-                `命中率: ${accuracy}%`;
+                `命中率: ${accuracy}%<br>` +
+                `彩蛋发现: ${easterEggsFound}/${totalEasterEggs}`;
+            
+            if (score >= 1000) {
+                document.getElementById('nameInput').style.display = 'block';
+                document.getElementById('playerName').value = '';
+                document.getElementById('playerName').focus();
+            } else {
+                document.getElementById('nameInput').style.display = 'none';
+                showLeaderboard();
+            }
+        }
+
+        function submitScore() {
+            const name = document.getElementById('playerName').value.trim() || '匿名玩家';
+            const leaderboard = JSON.parse(localStorage.getItem('gameLeaderboard') || '[]');
+            
+            leaderboard.push({
+                name: name,
+                score: score,
+                eggs: easterEggsFound,
+                date: new Date().toLocaleDateString()
+            });
+            
+            leaderboard.sort((a, b) => b.score - a.score);
+            
+            const top5 = leaderboard.slice(0, 5);
+            localStorage.setItem('gameLeaderboard', JSON.stringify(top5));
+            
+            document.getElementById('nameInput').style.display = 'none';
+            showLeaderboard();
+        }
+
+        function showLeaderboard() {
+            const leaderboard = JSON.parse(localStorage.getItem('gameLeaderboard') || '[]');
+            
+            if (leaderboard.length > 0) {
+                document.getElementById('leaderboard').style.display = 'block';
+                let html = '';
+                const medals = ['🥇', '🥈', '🥉', '4️⃣', '5️⃣'];
+                
+                leaderboard.forEach((entry, index) => {
+                    html += `<div style="color: #fff; font-size: 14px; margin: 5px 0; display: flex; justify-content: space-between;">
+                        <span>${medals[index]} ${entry.name}</span>
+                        <span style="color: #ffd700;">${entry.score}分</span>
+                    </div>`;
+                });
+                
+                document.getElementById('leaderboardList').innerHTML = html;
+            }
         }
 
         function handleClick(e) {
@@ -2775,6 +2992,30 @@
 
         document.getElementById('startBtn').addEventListener('click', startGame);
         document.getElementById('restartBtn').addEventListener('click', startGame);
+        document.getElementById('submitScore').addEventListener('click', submitScore);
+        document.getElementById('playerName').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') submitScore();
+        });
+        
+        document.getElementById('fireworkSkill').addEventListener('click', function(e) {
+            e.stopPropagation();
+            activateFirework();
+        });
+        document.getElementById('fireworkSkill').addEventListener('touchstart', function(e) {
+            e.stopPropagation();
+            e.preventDefault();
+            activateFirework();
+        });
+        
+        document.getElementById('gatlingSkill').addEventListener('click', function(e) {
+            e.stopPropagation();
+            activateGatling();
+        });
+        document.getElementById('gatlingSkill').addEventListener('touchstart', function(e) {
+            e.stopPropagation();
+            e.preventDefault();
+            activateGatling();
+        });
 
         resize();
         initSnow();
@@ -2899,6 +3140,7 @@
             }
             
             showNotification('🌰 松子掉落!', '点击树木获得松子');
+            foundEasterEgg('松子掉落', '右边树木也有惊喜！');
         }
 
         function transformToChristmasTree(tree) {
@@ -2940,6 +3182,7 @@
             container.appendChild(star);
             
             showNotification('🎄 圣诞树!', '点击右边树木5次变身圣诞树');
+            foundEasterEgg('圣诞树', '还有更多彩蛋等你发现！');
         }
 
         function setupMoonClick() {
@@ -3048,6 +3291,7 @@
                 moon.style.height = '150px';
                 
                 showNotification('🌙 传送异世界!', '点击月亮返回原世界');
+                foundEasterEgg('异世界', '写轮眼的力量！');
                 
                 createOtherWorldElements();
                 
